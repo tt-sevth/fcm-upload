@@ -39,6 +39,7 @@ func main() {
 	// 先查询配置文件是否存在，否则直接退出
 	if !util.IsFileExist(util.ConfigPath + "/config.json") {
 		util.Log.Fatal("未找到配置文件，请先初始化配置文件！")
+		fmt.Println("未找到配置文件，请先初始化配置文件！")
 	}
 	// 加载配置文件 这里不需要返回的config对象，初始化后，内部可以直接调用
 	_, _ = core.LoadConfig()
@@ -83,7 +84,7 @@ help:
 			`-h --help`,
 			"-i --init  config all",
 			"-u --use   console system typora",
-			"-d --dump  db",
+			"-d --db  	dump query",
 		}
 		help2 := []string{
 			"to show this help info",
