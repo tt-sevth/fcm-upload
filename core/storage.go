@@ -12,16 +12,22 @@ import (
 	"reflect"
 )
 
+const (
+	maxFileSize = 2 << 25
+	partSize int64 = 2 << 21
+)
+
 type Storage struct {
 	Ucloud *Ucloud `json:"ucloud"`
+	Aliyun *Aliyun `json:"aliyun"`
 }
 
 var fileName, fileMD5, fileMime, fileKey string
+var fileSize int64
 
 func Upload(filePath string) (result []*DbData, EOne []bool) {
-	//var EOne []bool
 	util.Log.Info("初始化上传模块。")
-	fileName, fileMD5, fileMime = util.FileInfo(filePath)
+	fileName, fileMD5, fileMime, fileSize = util.FileInfo(filePath)
 	fileKey = util.MakeFileKey(config.Directory, filePath)
 
 	if len(config.Uses) < 1 {
@@ -47,7 +53,7 @@ func Upload(filePath string) (result []*DbData, EOne []bool) {
 		}
 		// =======================================
 		util.Log.Info(v, "上传至 bucket 的全路径为 ", fileKey)
-		res, err := call(funcMap, v, filePath, fileKey)
+		res, err := call(funcMap, v, filePath)
 		if err != nil {
 			util.Log.Error(err)
 			//_ = util.SendUploadFailedNotify(method)
@@ -55,7 +61,7 @@ func Upload(filePath string) (result []*DbData, EOne []bool) {
 		}
 		EOne = append(EOne, false)
 		util.Log.Info(v, "返回结果为 - ", res)
-		result = append(result, makeData(v, filePath, fileKey, res))
+		result = append(result, makeData(v, filePath, res))
 	}
 	util.Log.Info(`-------------------此文件已全部处理完成。-------------------`)
 	return
@@ -64,10 +70,11 @@ func Upload(filePath string) (result []*DbData, EOne []bool) {
 func getMap() map[string]interface{} {
 	funcMap := make(map[string]interface{})
 	funcMap["ucloud"] = ucloud
+	funcMap["aliyun"] = aliyun
 	return funcMap
 }
 
-func makeData(usesName, filePath, fileKey, res string) *DbData {
+func makeData(usesName, filePath, res string) *DbData {
 	D := new(DbData)
 	D.Uses = usesName
 	D.FileName = fileName

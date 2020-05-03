@@ -197,14 +197,14 @@ func (u Util) GetFileNameWithoutExt(filePath string) string {
 	ext := u.GetFileExt(filePath)
 	for i := len(filePath) - 1; i >= 0; i-- {
 		if filePath[i] == '/' {
-			name = filePath[i + 1:]
+			name = filePath[i+1:]
 			break
 		}
 	}
 	if len(name) == 0 {
 		name = filePath
 	}
-	return name[0:len(name) - len(ext)]
+	return name[0 : len(name)-len(ext)]
 }
 
 // 获取操作系统类型
@@ -238,9 +238,21 @@ func (u Util) GetFileMimeType(path string) string {
 	return http.DetectContentType(buffer)
 }
 
+// 根据传入的自定义域名，生成返回链接
+func (u Util) MakeReturnLink( customDomain, bucketName, Endpoint string) (link string) {
+	if customDomain == "" {
+		customDomain = "https://" + bucketName + "." + Endpoint
+	}
+	if customDomain[len(customDomain) - 1] == '/' {
+		customDomain = customDomain[:len(customDomain) - 1]
+	}
+	link = customDomain + "/" + fileKey
+	return
+}
+
 // 发送开始上传通知
 func (u Util) SendStartUploadNotify(count int) (err error) {
-	return beeep.Notify("文件上传中…", strconv.Itoa(count) + "个文件正在上传，请稍等片刻!", "")
+	return beeep.Notify("文件上传中…", strconv.Itoa(count)+"个文件正在上传，请稍等片刻!", "")
 }
 
 // 未检测到上传的文件
@@ -253,7 +265,7 @@ func (u Util) SendUploadSuccessNotify(save bool) (err error) {
 	if !save {
 		return beeep.Notify("上传成功", "链接已在剪贴板中，请直接去粘贴", "")
 	}
-	return beeep.Notify("上传成功", "链接已保存到文件，保存路径为:'" + u.SavePath + "'", "")
+	return beeep.Notify("上传成功", "链接已保存到文件，保存路径为:'"+u.SavePath+"'", "")
 }
 
 // 上传失败通知
@@ -286,7 +298,7 @@ func (u Util) GetFileMD5(filePath string) string {
 }
 
 // 文件基础处理
-func (u Util) FileInfo(filePath string) (Name, MD5, Mime string) {
+func (u Util) FileInfo(filePath string) (Name, MD5, Mime string, Size int64) {
 	Name = u.GetFileNameWithoutExt(filePath)
 
 	f, err := os.Open(filePath)
@@ -305,6 +317,7 @@ func (u Util) FileInfo(filePath string) (Name, MD5, Mime string) {
 	//fmt.Println(buffer)
 	//MD5 = "123456"
 	Mime = http.DetectContentType(buffer)
+	Size = u.GetFileSize(filePath)
 
 	return
 }

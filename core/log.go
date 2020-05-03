@@ -27,10 +27,10 @@ func NewLogger() *zap.SugaredLogger {
 // 日志写入文件
 func getLogWriter() zapcore.WriteSyncer {
 	if _, err := os.Stat(getHomeDir() + "/FCM/log"); err != nil {
-		_ = os.MkdirAll(getHomeDir() + "/FCM/log", 0755)
+		_ = os.MkdirAll(getHomeDir()+"/FCM/log", 0755)
 	}
 	filePath := getHomeDir() + "/FCM/log/" + time.Now().Format("2006-01-02") + ".log"
-	logFile, err := os.OpenFile(filePath,  os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
+	logFile, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
 	if err != nil {
 		panic(err)
 	}

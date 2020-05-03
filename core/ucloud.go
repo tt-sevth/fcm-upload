@@ -11,22 +11,18 @@ import (
 	"../SDK/ufile"
 )
 
-const (
-	maxFileSize = 2 << 25
-)
-
 type Ucloud struct {
 	Name            string `json:"name"`
 	PublicKey       string `json:"public_key"`
 	PrivateKey      string `json:"private_key"`
 	BucketName      string `json:"bucket_name"`
 	FileHost        string `json:"file_host"`
-	Directory       string `json:"directory"`
+	//Directory       string `json:"directory"`
 	CustomDomain    string `json:"custom_domain"`
-	VerifyUploadMD5 bool   `json:"verify_upload_md_5"`
+	VerifyUploadMD5 bool   `json:"verify_upload_md5"`
 }
 
-func ucloud(FilePath, FileKey string) (link string) {
+func ucloud(FilePath string) (link string) {
 	util.Log.Info("使用 uclod SDK 上传")
 	UConfig := config.StorageTypes.Ucloud
 	UC := &ufile.Config{
@@ -38,34 +34,30 @@ func ucloud(FilePath, FileKey string) (link string) {
 	}
 	req, err := ufile.NewFileRequest(UC, nil)
 	if err != nil {
-		util.Log.Error(err)
+		util.Log.Error("Ucloud SDK throw err ", err)
 		return
 	}
 	//fileKey := Util.MakeFileKey(c.Directory, FilePath)
-	err = ucloudUploadMethod(FilePath, FileKey, req)
+	err = ucloudUploadMethod(FilePath, req)
 	if err != nil {
-		util.Log.Error(err.Error())
+		util.Log.Error("Ucloud SDK throw err ", err)
 		return
 	}
-	domain := UConfig.CustomDomain
-	if domain == "" {
-		domain = "http://" + UConfig.BucketName + "." + UConfig.FileHost
-	}
-	link = domain + "/" + FileKey
-	return
+
+	return util.MakeReturnLink(UConfig.CustomDomain, UConfig.BucketName, UConfig.FileHost)
 }
 
-func ucloudUploadMethod(filePath, keyName string, request *ufile.Request) (err error) {
-	if err = request.UploadHit(filePath, keyName); err == nil {
+func ucloudUploadMethod(filePath string, request *ufile.Request) (err error) {
+	if err = request.UploadHit(filePath, fileKey); err == nil {
 		util.Log.Info("文件秒传至Ucloud成功")
 		return nil
 	}
 	//mimeType := util.GetFileMimeType(filePath)
-	fileSize := util.GetFileSize(filePath)
+	//fileSize := util.GetFileSize(filePath)
 	if fileSize <= maxFileSize {
-		err = request.PutFile(filePath, keyName, "")
+		err = request.PutFile(filePath, fileKey, "")
 		return
 	}
-	err = request.AsyncMPut(filePath, keyName, "")
+	err = request.AsyncMPut(filePath, fileKey, "")
 	return
 }
