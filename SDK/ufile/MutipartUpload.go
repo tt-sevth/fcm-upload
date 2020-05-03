@@ -49,7 +49,7 @@ type uploadChan struct {
 //大于 100M 的文件推荐使用本接口上传。
 //同时并发上传的分片数量为10
 func (u *Request) AsyncMPut(filePath, keyName, mimeType string) error {
-	return u.AsyncUpload(filePath, keyName, mimeType, 10)
+	return u.AsyncUpload(filePath, keyName, mimeType, 8)
 }
 
 //AsyncUpload AsyncMPut 的升级版, jobs 表示同时并发的数量。
