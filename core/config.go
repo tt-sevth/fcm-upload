@@ -18,7 +18,7 @@ import (
 type Config struct {
 	Name          string   `json:"name"`
 	StorageTypes  *Storage `json:"storage_types"`
-	Directory	  string	`json:"directory"`
+	Directory     string   `json:"directory"`
 	PrimaryDomain string   `json:"primary_domain"`
 	Uses          []string `json:"uses"`
 	Dsn           *Db      `json:"dsn"`
@@ -83,13 +83,12 @@ func InitConfig() error {
 
 //createConfigFile 创建配置文件
 func createConfigFile() (err error) {
-	if err := util.IsPathExists(util.ConfigPath); err != nil {
-		err = util.MakeDIR(util.ConfigPath)
-		if err != nil {
-			return err
-		}
-		return nil
+	//if err := util.IsPathExists(util.ConfigPath); err != nil {
+	err = util.MakeDIR(util.ConfigPath)
+	if err != nil {
+		return err
 	}
+	//}
 	f, err := util.OpenFile(util.ConfigPath + "/config.json")
 	if f != nil {
 		defer f.Close()

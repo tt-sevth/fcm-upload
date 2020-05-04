@@ -21,6 +21,7 @@ type Storage struct {
 	Ucloud  *Ucloud  `json:"ucloud"`
 	Aliyun  *Aliyun  `json:"aliyun"`
 	Tencent *Tencent `json:"tencent"`
+	Baidu   *Baidu   `json:"baidu"`
 }
 
 var filePath, fileName, fileMD5, fileMime, fileKey string
@@ -70,9 +71,10 @@ func Upload(path string) (result []*DbData, EOne []bool) {
 
 func getStorageMethodMap() map[string]interface{} {
 	return map[string]interface{}{
-		"ucloud": ucloud,
-		"aliyun": aliyun,
+		"ucloud":  ucloud,
+		"aliyun":  aliyun,
 		"tencent": tencent,
+		"baidu":   baidu,
 	}
 }
 
