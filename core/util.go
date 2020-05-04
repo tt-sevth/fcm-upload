@@ -265,7 +265,7 @@ func (u Util) SendUploadSuccessNotify(save bool) (err error) {
 	if !save {
 		return beeep.Notify("上传成功", "链接已在剪贴板中，请直接去粘贴", "")
 	}
-	return beeep.Notify("上传成功", "链接已保存到文件，保存路径为:'"+u.SavePath+"'", "")
+	return beeep.Notify("上传成功", "链接已在剪贴板中，并且已保存到文件，保存路径为:'"+u.SavePath+"'", "")
 }
 
 // 上传失败通知
@@ -274,16 +274,21 @@ func (u Util) SendUploadFailedNotify() (err error) {
 }
 
 // 设置剪切板内容
-func (u Util) SetClipboard(name, link string) error {
-	ext := strings.ToLower(strings.TrimLeft(u.GetFileExt(link), "."))
+func (u Util) SetClipboard(name, link []string) error {
+	var buffer bytes.Buffer
+	var temp string
 	img := []string{
 		"jpg", "jpeg", "png", "gif", "bmp", "ico",
 	}
-	text := link
-	if collection.Collect(img).Contains(ext) {
-		text = "!" + "[" + name + "](" + link + ")"
+	for i, _ := range name {
+		ext := strings.ToLower(strings.TrimLeft(u.GetFileExt(link[i]), "."))
+		temp = link[i] + "\n"
+		if collection.Collect(img).Contains(ext) {
+			temp = "!" + "[" + name[i] + "](" + link[i] + ")\n"
+		}
+		buffer.WriteString(temp)
 	}
-	return clipboard.WriteAll(text)
+	return clipboard.WriteAll(buffer.String())
 }
 
 // 获取文件MD5值

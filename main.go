@@ -238,9 +238,14 @@ func makeResult(Data [][]*core.DbData, method string) {
 			}
 		}
 	case "system":
-		if len(Data) == 1 && len(Data[0]) == 1 {
+		if len(Data[0]) == 1 {
 			_ = util.SendUploadSuccessNotify(false)
-			_ = util.SetClipboard(Data[0][0].FileName, Data[0][0].Link)
+			var name, link []string
+			for _, v := range Data {
+				name = append(name, v[0].FileName)
+				link = append(link, v[0].Link)
+			}
+			_ = util.SetClipboard(name, link)
 		} else {
 			_ = util.SendUploadSuccessNotify(true)
 			if err := util.IsPathExists(util.SavePath); err != nil {
