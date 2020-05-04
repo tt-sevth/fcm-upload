@@ -16,7 +16,6 @@ type Ucloud struct {
 	BucketName      string `json:"bucket_name"`
 	Endpoint        string `json:"endpoint"`
 	CustomDomain    string `json:"custom_domain"`
-	VerifyUploadMD5 bool   `json:"verify_upload_md5"`
 }
 
 func ucloud() (link string) {
@@ -27,7 +26,7 @@ func ucloud() (link string) {
 		PrivateKey:      UConfig.PrivateKey,
 		BucketName:      UConfig.BucketName,
 		FileHost:        UConfig.Endpoint,
-		VerifyUploadMD5: UConfig.VerifyUploadMD5,
+		VerifyUploadMD5: true,
 	}
 	client, err := ufsdk.NewFileRequest(UC, nil)
 	if err != nil {
