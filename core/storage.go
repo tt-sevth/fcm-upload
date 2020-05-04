@@ -22,6 +22,7 @@ type Storage struct {
 	Aliyun  *Aliyun  `json:"aliyun"`
 	Tencent *Tencent `json:"tencent"`
 	Baidu   *Baidu   `json:"baidu"`
+	Qiniu   *Qiniu   `json:"qiniu"`
 }
 
 var filePath, fileName, fileMD5, fileMime, fileKey string
@@ -75,6 +76,7 @@ func getStorageMethodMap() map[string]interface{} {
 		"aliyun":  aliyun,
 		"tencent": tencent,
 		"baidu":   baidu,
+		"qiniu":   qiniu,
 	}
 }
 
