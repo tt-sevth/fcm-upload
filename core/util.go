@@ -64,27 +64,27 @@ func (u *Util) initUtil() {
 // 以下为工具集的方法
 
 // 打开文件
-func (u Util) OpenFile(filePath string) (*os.File, error) {
-	return os.OpenFile(filePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
+func (u Util) OpenFile(FilePath string) (*os.File, error) {
+	return os.OpenFile(FilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
 }
 
 // 检查文件是否存在
-func (u Util) IsFileExist(filePath string) bool {
-	if _, err := os.Stat(filePath); os.IsNotExist(err) {
+func (u Util) IsFileExist(FilePath string) bool {
+	if _, err := os.Stat(FilePath); os.IsNotExist(err) {
 		return false
 	}
 	return true
 }
 
 // 获取文件扩展名
-func (u Util) GetFileExt(filePath string) string {
+func (u Util) GetFileExt(FilePath string) string {
 	var fileExt string
-	for i := len(filePath) - 1; i >= 0; i-- {
-		if filePath[i] == '/' {
+	for i := len(FilePath) - 1; i >= 0; i-- {
+		if FilePath[i] == '/' {
 			break
 		}
-		if filePath[i] == '.' {
-			fileExt = filePath[i:]
+		if FilePath[i] == '.' {
+			fileExt = FilePath[i:]
 			if fileExt == ".gz" || fileExt == ".bz" || fileExt == ".bz2" {
 				continue
 			}
@@ -95,8 +95,8 @@ func (u Util) GetFileExt(filePath string) string {
 }
 
 // 获取文件大小 单位:Byte
-func (u Util) GetFileSize(filePath string) int64 {
-	file, _ := u.OpenFile(filePath)
+func (u Util) GetFileSize(FilePath string) int64 {
+	file, _ := u.OpenFile(FilePath)
 	fi, _ := file.Stat()
 	return fi.Size()
 }
@@ -113,7 +113,7 @@ func (u Util) MakeDIR(path string) error {
 }
 
 // 合成带目录的文件路径
-func (u Util) MakeFileKey(dir, filePath string) string {
+func (u Util) MakeFileKey(dir, FilePath string) string {
 	k := u.GenerateRandomKey()
 	dir = strings.ReplaceAll(dir, "{Y}", time.Now().Format("2006"))
 	dir = strings.ReplaceAll(dir, "{y}", time.Now().Format("06"))
@@ -122,14 +122,14 @@ func (u Util) MakeFileKey(dir, filePath string) string {
 	dir = strings.ReplaceAll(dir, "{d}", time.Now().Format("02"))
 	dir = strings.ReplaceAll(dir, "{H}", time.Now().Format("15"))
 	dir = strings.ReplaceAll(dir, "{h}", time.Now().Format("03"))
-	dir = strings.ReplaceAll(dir, "{R}", u.GetArchiveDirName(filePath))
+	dir = strings.ReplaceAll(dir, "{R}", u.GetArchiveDirName(FilePath))
 	if dir[:1] == "/" {
 		dir = strings.TrimLeft(dir, "/")
 	}
 	if dir[len(dir)-1:] != "/" {
 		dir = dir + "/"
 	}
-	key := dir + k + u.GetFileExt(filePath)
+	key := dir + k + u.GetFileExt(FilePath)
 	return key
 }
 
@@ -146,8 +146,8 @@ func (u Util) GenerateRandomKey() string {
 }
 
 // 获取文件分类对应目录名
-func (u Util) GetArchiveDirName(filePath string) string {
-	ext := strings.ToLower(strings.TrimLeft(u.GetFileExt(filePath), "."))
+func (u Util) GetArchiveDirName(FilePath string) string {
+	ext := strings.ToLower(strings.TrimLeft(u.GetFileExt(FilePath), "."))
 	pictures := []string{"jpg", "jpeg", "peg", "png", "gif", "tiff", "tif", "webp",
 		"svg", "bmp", "ai", "ico", "icns", "ppm", "pgm", "pnm", "pbm", "bgp"}
 	music := []string{"mp3", "aac", "wav", "ogg", "flac", "wma", "ac3", "pcm", "aiff",
@@ -192,17 +192,17 @@ func (u Util) GetArchiveDirName(filePath string) string {
 }
 
 // 取得不带扩展名的文件名
-func (u Util) GetFileNameWithoutExt(filePath string) string {
+func (u Util) GetFileNameWithoutExt(FilePath string) string {
 	var name string
-	ext := u.GetFileExt(filePath)
-	for i := len(filePath) - 1; i >= 0; i-- {
-		if filePath[i] == '/' {
-			name = filePath[i+1:]
+	ext := u.GetFileExt(FilePath)
+	for i := len(FilePath) - 1; i >= 0; i-- {
+		if FilePath[i] == '/' {
+			name = FilePath[i+1:]
 			break
 		}
 	}
 	if len(name) == 0 {
-		name = filePath
+		name = FilePath
 	}
 	return name[0 : len(name)-len(ext)]
 }
@@ -287,8 +287,8 @@ func (u Util) SetClipboard(name, link string) error {
 }
 
 // 获取文件MD5值
-func (u Util) GetFileMD5(filePath string) string {
-	f, err := os.Open(filePath)
+func (u Util) GetFileMD5(FilePath string) string {
+	f, err := os.Open(FilePath)
 	if err != nil {
 		return ""
 	}
@@ -298,10 +298,10 @@ func (u Util) GetFileMD5(filePath string) string {
 }
 
 // 文件基础处理
-func (u Util) FileInfo(filePath string) (Name, MD5, Mime string, Size int64) {
-	Name = u.GetFileNameWithoutExt(filePath)
+func (u Util) FileInfo(fp string) (Name, MD5, Mime, path string, Size int64) {
+	Name = u.GetFileNameWithoutExt(fp)
 
-	f, err := os.Open(filePath)
+	f, err := os.Open(fp)
 	if err != nil {
 		return
 	}
@@ -313,12 +313,12 @@ func (u Util) FileInfo(filePath string) (Name, MD5, Mime string, Size int64) {
 		Mime = "plain/text"
 	}
 
-	MD5 = u.GetFileMD5(filePath)
+	MD5 = u.GetFileMD5(fp)
 	//fmt.Println(buffer)
 	//MD5 = "123456"
 	Mime = http.DetectContentType(buffer)
-	Size = u.GetFileSize(filePath)
-
+	Size = u.GetFileSize(fp)
+	path = fp
 	return
 }
 

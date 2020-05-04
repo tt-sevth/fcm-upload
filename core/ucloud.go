@@ -7,29 +7,26 @@
 
 package core
 
-import (
-	"../SDK/ufile"
-)
+import "../SDK/ufile"
 
 type Ucloud struct {
 	Name            string `json:"name"`
 	PublicKey       string `json:"public_key"`
 	PrivateKey      string `json:"private_key"`
 	BucketName      string `json:"bucket_name"`
-	FileHost        string `json:"file_host"`
-	//Directory       string `json:"directory"`
+	Endpoint        string `json:"endpoint"`
 	CustomDomain    string `json:"custom_domain"`
 	VerifyUploadMD5 bool   `json:"verify_upload_md5"`
 }
 
-func ucloud(FilePath string) (link string) {
+func ucloud() (link string) {
 	util.Log.Info("使用 uclod SDK 上传")
 	UConfig := config.StorageTypes.Ucloud
 	UC := &ufile.Config{
 		PublicKey:       UConfig.PublicKey,
 		PrivateKey:      UConfig.PrivateKey,
 		BucketName:      UConfig.BucketName,
-		FileHost:        UConfig.FileHost,
+		FileHost:        UConfig.Endpoint,
 		VerifyUploadMD5: UConfig.VerifyUploadMD5,
 	}
 	req, err := ufile.NewFileRequest(UC, nil)
@@ -38,16 +35,16 @@ func ucloud(FilePath string) (link string) {
 		return
 	}
 	//fileKey := Util.MakeFileKey(c.Directory, FilePath)
-	err = ucloudUploadMethod(FilePath, req)
+	err = ucloudUploadMethod(req)
 	if err != nil {
 		util.Log.Error("Ucloud SDK throw err ", err)
 		return
 	}
 
-	return util.MakeReturnLink(UConfig.CustomDomain, UConfig.BucketName, UConfig.FileHost)
+	return util.MakeReturnLink(UConfig.CustomDomain, UConfig.BucketName, UConfig.Endpoint)
 }
 
-func ucloudUploadMethod(filePath string, request *ufile.Request) (err error) {
+func ucloudUploadMethod(request *ufile.Request) (err error) {
 	if err = request.UploadHit(filePath, fileKey); err == nil {
 		util.Log.Info("文件秒传至Ucloud成功")
 		return nil

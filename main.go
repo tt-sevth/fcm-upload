@@ -172,9 +172,9 @@ db:
 			} else {
 				_, _ = core.LoadConfig()
 				if data := core.InitDB().Query(args[3]); data != nil {
-					fmt.Printf("    %-10s    %-10s    %-s\n", "文件名", "服务商", "链接")
+					fmt.Printf("    %-22s%-10s%-s\n", "文件名", "服务商", "链接")
 					for _, d := range data {
-						fmt.Printf("    %-10s    %-10s    %-s\n", d.FileName, d.Uses, d.Link)
+						fmt.Printf("    %-25s%-13s%-s\n", d.FileName, d.Uses, d.Link)
 					}
 				} else {
 					fmt.Println("没有要查询的数据")
@@ -195,18 +195,18 @@ func makeUpload(fps []string) [][]*core.DbData {
 	if util.Method == "system" {
 		_ = util.SendStartUploadNotify(len(fps))
 	}
-	for _, v := range fps {
-		if v == "" { // 虽然不太可能存在为空，以防万一
+	for _, FP := range fps {
+		if FP == "" { // 虽然不太可能存在为空，以防万一
 			util.Log.Info("发现一条空地址，已跳过")
 			continue
 		}
-		if !util.IsFileExist(v) { //检查文件是否真实存在，防止后面出错
-			util.Log.Info("发现一个不存在的文件，\"" + v + "\"已跳过")
+		if !util.IsFileExist(FP) { //检查文件是否真实存在，防止后面出错
+			util.Log.Info("发现一个不存在的文件，\"" + FP + "\"已跳过")
 			continue
 		}
 
-		util.Log.Info("准备上传文件", util.GetFileNameWithoutExt(v))
-		result, EOne := core.Upload(v)
+		util.Log.Info("准备上传文件", util.GetFileNameWithoutExt(FP))
+		result, EOne := core.Upload(FP)
 		// 存在长度才会将返回数据加入data切片中
 		if len(result) > 0 {
 			data = append(data, result)

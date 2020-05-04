@@ -15,11 +15,10 @@ type Aliyun struct {
 	AccessKeySecret string `json:"access_key_secret"`
 	BucketName      string `json:"bucket_name"`
 	Endpoint        string `json:"endpoint"`
-	//Directory       string `json:"directory"`
 	CustomDomain    string `json:"custom_domain"`
 }
 
-func aliyun(FilePath string) (link string) {
+func aliyun() (link string) {
 	util.Log.Info("使用 aliyun SDK 上传")
 	AliConfig := config.StorageTypes.Aliyun
 	client, err := oss.New(AliConfig.Endpoint, AliConfig.AccessKeyId, AliConfig.AccessKeySecret)
@@ -32,7 +31,7 @@ func aliyun(FilePath string) (link string) {
 		util.Log.Error("Aliyun SDK throw err ", err)
 		return
 	}
-	err = aliyunUploadMethod(FilePath, bucket)
+	err = aliyunUploadMethod(bucket)
 	if err != nil {
 		util.Log.Error("Aliyun SDK throw err ", err)
 		return
@@ -42,12 +41,11 @@ func aliyun(FilePath string) (link string) {
 
 }
 
-func aliyunUploadMethod(FilePath string, bucket *oss.Bucket) (err error) {
+func aliyunUploadMethod(bucket *oss.Bucket) (err error) {
 	if fileSize <= maxFileSize {
-		err = bucket.PutObjectFromFile(fileKey, FilePath)
+		err = bucket.PutObjectFromFile(fileKey, filePath)
 		return
 	}
-	err = bucket.UploadFile(fileKey, FilePath, partSize, oss.Routines(8), oss.Checkpoint(true, ""))
+	err = bucket.UploadFile(fileKey, filePath, partSize, oss.Routines(8), oss.Checkpoint(true, ""))
 	return
 }
-

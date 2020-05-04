@@ -13,28 +13,29 @@ import (
 )
 
 const (
-	maxFileSize = 2 << 25
-	partSize int64 = 2 << 21
+	partSize    int64 = 2 << 21
+	maxFileSize       = 2 << 26
 )
 
 type Storage struct {
-	Ucloud *Ucloud `json:"ucloud"`
-	Aliyun *Aliyun `json:"aliyun"`
+	Ucloud  *Ucloud  `json:"ucloud"`
+	Aliyun  *Aliyun  `json:"aliyun"`
+	Tencent *Tencent `json:"tencent"`
 }
 
-var fileName, fileMD5, fileMime, fileKey string
+var filePath, fileName, fileMD5, fileMime, fileKey string
 var fileSize int64
 
-func Upload(filePath string) (result []*DbData, EOne []bool) {
+func Upload(path string) (result []*DbData, EOne []bool) {
 	util.Log.Info("初始化上传模块。")
-	fileName, fileMD5, fileMime, fileSize = util.FileInfo(filePath)
+	fileName, fileMD5, fileMime, filePath, fileSize = util.FileInfo(path)
 	fileKey = util.MakeFileKey(config.Directory, filePath)
 
 	if len(config.Uses) < 1 {
 		util.Log.Fatal("未设置可用的存储服务商。")
 	}
 	util.Log.Info("将使用的所有上传服务商是 - ", config.Uses)
-	funcMap := getMap()
+	funcMap := getStorageMethodMap()
 	util.Log.Info("获取 funcMap 完成 - ", funcMap)
 
 	//var filePath string = "./test.tar.gz"
@@ -53,7 +54,7 @@ func Upload(filePath string) (result []*DbData, EOne []bool) {
 		}
 		// =======================================
 		util.Log.Info(v, "上传至 bucket 的全路径为 ", fileKey)
-		res, err := call(funcMap, v, filePath)
+		res, err := call(funcMap, v)
 		if err != nil {
 			util.Log.Error(err)
 			//_ = util.SendUploadFailedNotify(method)
@@ -67,11 +68,12 @@ func Upload(filePath string) (result []*DbData, EOne []bool) {
 	return
 }
 
-func getMap() map[string]interface{} {
-	funcMap := make(map[string]interface{})
-	funcMap["ucloud"] = ucloud
-	funcMap["aliyun"] = aliyun
-	return funcMap
+func getStorageMethodMap() map[string]interface{} {
+	return map[string]interface{}{
+		"ucloud": ucloud,
+		"aliyun": aliyun,
+		"tencent": tencent,
+	}
 }
 
 func makeData(usesName, filePath, res string) *DbData {

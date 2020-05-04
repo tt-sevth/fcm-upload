@@ -108,35 +108,37 @@ func configTemplate() string {
     "name": "FCM 配置文件",
     "storage_types": {
         "ucloud": {
-            "name": "ucloud",
-            "说明1":"文件上传和下载用TOEKN，为了安全，强烈建议只使用 TOKEN 做文件管理",
+            "name": "Ucloud SDK modify By sevth",
             "public_key":"TOKEN***********************7042",
             "private_key":"cfc*************************7fc",
-
             "说明2":"以下两个参数是用来管理文件用的。对应的是 file.go 里面的接口，file_host 是不带 bucket 名字的。比如：北京地域的host填cn-bj.ufileos.com，而不是填 bucketname.cn-bj.ufileos.com。如果是自定义域名，请直接带上 http 开头的 URL。如：http://example.com，而不是填 example.com。",
             "bucket_name":"bucket",
-            "file_host":"cn-gd.ufileos.com",
+            "endpoint":"cn-gd.ufileos.com",
             "verify_upload_md5": true,
-            "说明3": "存放的文件目录与自定义域名 {R} 根据文件后缀判断文件类型，使用对应的路径，时间格式 {Y} 2020 {y} 20 {M} Apr {m} 04 {d} 01",
             "custom_domain": "https://example.com"
         },
         "aliyun": {
-            "name": "aliyun",
-            "说明1":"文件上传下载使用的秘钥",
+            "name": "Aliyun oss SDK",
             "access_key_id":"TOKEN***********************7042",
             "access_key_secret":"cfc*************************7fc",
-
-            "说明2":"以下两个参数是用来管理文件用的。对应的是 file.go 里面的接口，file_host 是不带 bucket 名字的。比如：北京地域的host填cn-bj.ufileos.com，而不是填 bucketname.cn-bj.ufileos.com。如果是自定义域名，请直接带上 http 开头的 URL。如：http://example.com，而不是填 example.com。",
             "bucket_name":"bucket",
-            "endpoint":"http://oss-cn-hangzhou.aliyuncs.com",
-            "说明3": "自定义域名",
+            "endpoint":"oss-cn-hangzhou.aliyuncs.com",
+            "custom_domain": "https://example.com"
+        },
+        "tencent": {
+            "name": "Tencent cos SDK",
+            "secret_id":"TOKEN***********************7042",
+            "secret_key":"cfc*************************7fc",
+            "session_token": "",
+            "bucket_name":"bucket",
+            "endpoint":"cos.COS_REGION.myqcloud.com",
             "custom_domain": "https://example.com"
         }
     },
     "dir说明": "存放的文件目录 {R} 根据文件后缀判断文件类型，使用对应的路径，时间格式 {Y} 2020 {y} 20 {M} Apr {m} 04 {d} 01",
     "directory": "test/{Y}/{M}/{d}",
     "primary_domain": "",
-    "uses": ["ucloud"],
+    "uses": ["ucloud", "aliyun"],
     "dsn": {
         "uses": "sqlite3",
         "protocol": "",
@@ -146,5 +148,6 @@ func configTemplate() string {
         "dsn_link": "",
         "debug": false
     }
-}`
+}
+`
 }
