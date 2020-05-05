@@ -15,8 +15,10 @@ import (
 	"github.com/gen2brain/beeep"
 	"github.com/sevth-developer/clipboard"
 	"go.uber.org/zap"
+	"io"
 	"io/ioutil"
 	"math/rand"
+	"mime/multipart"
 	"net/http"
 	"os"
 	"os/exec"
@@ -38,6 +40,7 @@ type Util struct {
 	Log        *zap.SugaredLogger
 	Except     [][]bool
 	Method     string
+	ExceptUses []string
 }
 
 var util *Util
@@ -59,6 +62,7 @@ func (u *Util) initUtil() {
 	u.SavePath = u.WorkDir + "/save"
 	// 设置 log
 	u.Log = NewLogger()
+	u.ExceptUses = []string{"smms"}
 }
 
 // 以下为工具集的方法
@@ -66,6 +70,11 @@ func (u *Util) initUtil() {
 // 打开文件
 func (u Util) OpenFile(FilePath string) (*os.File, error) {
 	return os.OpenFile(FilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
+}
+
+// 只读方式读取文件
+func (u Util) OpenFileByReadOnly(FilePath string) (*os.File, error) {
+	return os.Open(filePath)
 }
 
 // 检查文件是否存在
@@ -239,12 +248,12 @@ func (u Util) GetFileMimeType(path string) string {
 }
 
 // 根据传入的自定义域名，生成返回链接
-func (u Util) MakeReturnLink( customDomain, bucketName, Endpoint string) (link string) {
+func (u Util) MakeReturnLink(customDomain, bucketName, Endpoint string) (link string) {
 	if customDomain == "" {
 		customDomain = "https://" + bucketName + "." + Endpoint
 	}
-	if customDomain[len(customDomain) - 1] == '/' {
-		customDomain = customDomain[:len(customDomain) - 1]
+	if customDomain[len(customDomain)-1] == '/' {
+		customDomain = customDomain[:len(customDomain)-1]
 	}
 	link = customDomain + "/" + fileKey
 	return
@@ -358,4 +367,32 @@ func getHomeDir() string {
 		home = "./"
 	}
 	return home
+}
+
+func (u Util) makeForm(file, field map[string]string) (*bytes.Buffer, string) {
+	var buffer = new(bytes.Buffer)
+	w := multipart.NewWriter(buffer)
+	for keyName, fp := range file {
+		fw, err := w.CreateFormFile(keyName, fp)
+		if err != nil {
+			fmt.Println(err)
+		}
+		fd, err := u.OpenFileByReadOnly(fp)
+		if err != nil {
+			fmt.Println(err)
+		}
+		_, err = io.Copy(fw, fd)
+		fd.Close()
+	}
+
+	for k, v := range field {
+		err := w.WriteField(k, v)
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+	c := w.FormDataContentType()
+
+	defer w.Close()
+	return buffer, c
 }

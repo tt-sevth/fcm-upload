@@ -9,6 +9,7 @@ package core
 
 import (
 	"errors"
+	"github.com/chenhg5/collection"
 	"reflect"
 )
 
@@ -24,6 +25,7 @@ type Storage struct {
 	Baidu   *Baidu   `json:"baidu"`
 	Qiniu   *Qiniu   `json:"qiniu"`
 	Upyun   *Upyun   `json:"upyun"`
+	Smms    *Smms    `json:"smms"`
 }
 
 var filePath, fileName, fileMD5, fileMime, fileKey string
@@ -47,6 +49,11 @@ func Upload(path string) (result []*DbData, EOne []bool) {
 			util.Log.Error("uses 设置不正确")
 			continue //为空的选项跳过
 		}
+		// 添加一个列表，在列表中的uses只能上传图片
+		if collection.Collect(util.ExceptUses).Contains(v) && util.GetArchiveDirName(filePath) != "picture" {
+			util.Log.Error("跳过上传至'", v, "'")
+			continue
+		}
 		// =======================================
 		// 处理数据库已存在的记录，直接返回
 		if res := db.QueryOne(fileMD5, v); res != nil {
@@ -56,7 +63,7 @@ func Upload(path string) (result []*DbData, EOne []bool) {
 			continue
 		}
 		// =======================================
-		util.Log.Info(v, "上传至 bucket 的全路径为 ", fileKey)
+		util.Log.Info("空间'", v, "'fileKey is ", fileKey)
 		res, err := call(funcMap, v)
 		if err != nil {
 			util.Log.Error(err)
@@ -79,6 +86,7 @@ func getStorageMethodMap() map[string]interface{} {
 		"baidu":   baidu,
 		"qiniu":   qiniu,
 		"upyun":   upyun,
+		"smms":    smms,
 	}
 }
 
