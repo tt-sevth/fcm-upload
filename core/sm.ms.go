@@ -12,11 +12,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 )
 
 type Smms struct {
 	Name        string `json:"name"`
 	AccessToken string `json:"access_token"`
+	Proxy       string `json:"proxy"`
 }
 
 func smms() (link string) {
@@ -36,7 +38,17 @@ func smms() (link string) {
 	req.Header.Set("Content-Type", contentType)
 	req.Header.Add("Authorization", token)
 
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{}
+	if config.StorageTypes.Smms.Proxy != "" {
+		client = &http.Client{Transport: &http.Transport{
+			Proxy: func(_ *http.Request) (*url.URL, error) {
+				return url.Parse(config.StorageTypes.Smms.Proxy)
+			},
+		}}
+	}
+	//resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
+
 	if err != nil {
 		fmt.Println(err)
 	}
