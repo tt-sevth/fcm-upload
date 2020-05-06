@@ -15,7 +15,7 @@ import (
 
 const (
 	partSize    int64 = 2 << 21
-	maxFileSize       = 2 << 26
+	maxFileSize int64 = 2 << 26
 )
 
 type Storage struct {
@@ -23,6 +23,7 @@ type Storage struct {
 	Aliyun  *Aliyun  `json:"aliyun"`
 	Tencent *Tencent `json:"tencent"`
 	Baidu   *Baidu   `json:"baidu"`
+	JD      *JD      `json:"jd"`
 	Qiniu   *Qiniu   `json:"qiniu"`
 	Upyun   *Upyun   `json:"upyun"`
 	Smms    *Smms    `json:"smms"`
@@ -84,6 +85,7 @@ func getStorageMethodMap() map[string]interface{} {
 		"aliyun":  aliyun,
 		"tencent": tencent,
 		"baidu":   baidu,
+		"jd":      jd,
 		"qiniu":   qiniu,
 		"upyun":   upyun,
 		"smms":    smms,
