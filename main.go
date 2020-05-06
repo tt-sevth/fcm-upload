@@ -42,7 +42,11 @@ func main() {
 		fmt.Println("未找到配置文件，请先初始化配置文件！")
 	}
 	// 加载配置文件 这里不需要返回的config对象，初始化后，内部可以直接调用
-	_, _ = core.LoadConfig()
+	_, err := core.LoadConfig()
+	if err != nil {
+		fmt.Println("配置文件发生错误！", err)
+		os.Exit(-1)
+	}
 	// 初始化数据库 后面进行数据查询等，先初始化一次获得db对象，避免重复初始化占用资源
 	db := core.InitDB()
 
