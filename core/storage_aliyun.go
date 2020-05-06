@@ -20,13 +20,12 @@ type Aliyun struct {
 
 func (a Aliyun)upload(info *fileInfo) (link string) {
 	util.Log.Info("使用 aliyun SDK 上传")
-	AliConfig := config.StorageTypes.Aliyun
-	client, err := oss.New(AliConfig.Endpoint, AliConfig.AccessKeyId, AliConfig.AccessKeySecret)
+	client, err := oss.New(a.Endpoint, a.AccessKeyId, a.AccessKeySecret)
 	if err != nil {
 		util.Log.Error("Aliyun SDK throw err ", err)
 		return
 	}
-	bucket, err := client.Bucket(AliConfig.BucketName)
+	bucket, err := client.Bucket(a.BucketName)
 	if err != nil {
 		util.Log.Error("Aliyun SDK throw err ", err)
 		return
