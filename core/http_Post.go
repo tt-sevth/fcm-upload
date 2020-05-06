@@ -20,6 +20,7 @@ import (
 type request struct {
 	client *http.Client
 	req    *http.Request
+	resp   http.Response
 }
 
 type RequestInputConfig struct {
@@ -49,38 +50,37 @@ func NewPost(c *RequestInputConfig) (*request, error) {
 		}}
 	}
 	// 自定义client权重更高，设置了client的话，再设置proxy无效
+	r.client = &http.Client{}
 	if c.Client != nil {
 		r.client = c.Client
 	}
 
 	body := &bytes.Buffer{}
 	bw := multipart.NewWriter(body)
-	defer bw.Close()
-	if len(c.Body.file) != 0 {
-		for keyName, fp := range c.Body.file {
-			fw, err := bw.CreateFormFile(keyName, fp)
-			if err != nil {
-				return nil, err
-				//fmt.Println(err)
-			}
-			fd, err := os.Open(fp)
-			if err != nil {
-				return nil, err
-				//fmt.Println(err)
-			}
-			_, err = io.Copy(fw, fd)
-			fd.Close()
+
+	for keyName, fp := range c.Body.file {
+		fw, err := bw.CreateFormFile(keyName, fp)
+		if err != nil {
+			return nil, err
+			//fmt.Println(err)
+		}
+		fd, err := os.Open(fp)
+		if err != nil {
+			return nil, err
+			//fmt.Println(err)
+		}
+		_, err = io.Copy(fw, fd)
+		fd.Close()
+	}
+
+	for k, v := range c.Body.field {
+		err := bw.WriteField(k, v)
+		if err != nil {
+			return nil, err
+			//fmt.Println(err)
 		}
 	}
-	if len(c.Body.field) != 0 {
-		for k, v := range c.Body.field {
-			err := bw.WriteField(k, v)
-			if err != nil {
-				return nil, err
-				//fmt.Println(err)
-			}
-		}
-	}
+	bw.Close() // 写完数据直接关闭，不然数据长度校验会出错
 
 	r.req, err = http.NewRequest("POST", c.Url, body)
 	if err != nil {
@@ -99,5 +99,9 @@ func (r *request) AddHeader(name, value string) {
 }
 
 func (r *request) Send() (*http.Response, error) {
-	return r.client.Do(r.req)
+	resp, err := r.client.Do(r.req)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
