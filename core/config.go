@@ -104,49 +104,94 @@ func createConfigFile() (err error) {
 func configTemplate() string {
 	return `
 {
-    "name": "FCM 配置文件",
-    "storage_types": {
-        "ucloud": {
-            "name": "Ucloud SDK modify By sevth",
-            "public_key":"TOKEN***********************7042",
-            "private_key":"cfc*************************7fc",
-            "说明2":"以下两个参数是用来管理文件用的。对应的是 file.go 里面的接口，file_host 是不带 bucket 名字的。比如：北京地域的host填cn-bj.ufileos.com，而不是填 bucketname.cn-bj.ufileos.com。如果是自定义域名，请直接带上 http 开头的 URL。如：http://example.com，而不是填 example.com。",
-            "bucket_name":"bucket",
-            "endpoint":"cn-gd.ufileos.com",
-            "verify_upload_md5": true,
-            "custom_domain": "https://example.com"
-        },
-        "aliyun": {
-            "name": "Aliyun oss SDK",
-            "access_key_id":"TOKEN***********************7042",
-            "access_key_secret":"cfc*************************7fc",
-            "bucket_name":"bucket",
-            "endpoint":"oss-cn-hangzhou.aliyuncs.com",
-            "custom_domain": "https://example.com"
-        },
-        "tencent": {
-            "name": "Tencent cos SDK",
-            "secret_id":"TOKEN***********************7042",
-            "secret_key":"cfc*************************7fc",
-            "session_token": "",
-            "bucket_name":"bucket",
-            "endpoint":"cos.COS_REGION.myqcloud.com",
-            "custom_domain": "https://example.com"
-        }
+  "name": "FCM 配置文件",
+  "storage_types": {
+    "ucloud": {
+      "name": "Ucloud SDK modify By sevth",
+      "public_key": "TOKEN***********************042",
+      "private_key": "cfc***********************7fc",
+      "说明2": "以下两个参数是用来管理文件用的。对应的是 file.go 里面的接口，file_host 是不带 bucket 名字的。比如：北京地域的host填cn-bj.ufileos.com，而不是填 bucketname.cn-bj.ufileos.com。如果是自定义域名，请直接带上 http 开头的 URL。如：http://example.com，而不是填 example.com。",
+      "bucket_name": "bucket",
+      "endpoint": "cn-gd.ufileos.com",
+      "custom_domain": "http://example.com"
     },
-    "dir说明": "存放的文件目录 {R} 根据文件后缀判断文件类型，使用对应的路径，时间格式 {Y} 2020 {y} 20 {M} Apr {m} 04 {d} 01",
-    "directory": "test/{Y}/{M}/{d}",
-    "primary_domain": "",
-    "uses": ["ucloud", "aliyun"],
-    "dsn": {
-        "uses": "sqlite3",
-        "protocol": "",
-        "username": "",
-        "password": "",
-        "dbname": "",
-        "dsn_link": "",
-        "debug": false
+    "aliyun": {
+      "name": "Aliyun oss SDK",
+      "access_key_id": "LT***********************KS",
+      "access_key_secret": "Tu***********************e0",
+      "bucket_name": "sevth-test",
+      "endpoint": "oss-cn-shenzhen.aliyuncs.com",
+      "custom_domain": ""
+    },
+    "tencent": {
+      "name": "Tencent cos SDK",
+      "secret_id": "TOKEN***********************7042",
+      "secret_key": "cfc*************************7fc",
+      "session_token": "",
+      "bucket_name": "bucket",
+      "endpoint": "cos.COS_REGION.myqcloud.com",
+      "custom_domain": "https://example.com"
+    },
+    "baidu": {
+      "name": "baidu bos SDK",
+      "access_key_id": "a8***********************38",
+      "secret_access_key": "91a***********************c4e",
+      "bucket_name": "sevth",
+      "endpoint": "gz.bcebos.com",
+      "custom_domain": ""
+    },
+    "jd": {
+      "name": "JD oss SDK",
+      "access_key_id": "8A***********************F5",
+      "access_key_secret": "64***********************9A",
+      "bucket_name": "sevth",
+      "endpoint": "s3.cn-south-1.jdcloud-oss.com",
+      "custom_domain": ""
+    },
+    "qiniu": {
+      "name": "Qiniu oss SDK",
+      "ak": "LN***********************f3",
+      "sk": "IA***********************6F",
+      "bucket_name": "sevth",
+      "qiniu说明": "下面的endpoint没啥用处，写不写都无所谓,将测试域名或者自定义域名填写到 custom_domain 里面",
+      "endpoint": "s3-cn-south-1.qiniucs.com",
+      "custom_domain": "https://example.com"
+    },
+    "upyun": {
+      "name": "Upyun oss SDK",
+      "operator": "root",
+      "password": "4n***********************7Tk",
+      "bucket_name": "sevth",
+      "endpoint": "test.upcdn.net",
+      "custom_domain": ""
+    },
+    "smms": {
+      "name": "smms",
+      "access_token": "EVYkI2DGsBGcWnt8LK4AtGoGag3qcyQY",
+      "proxy": ""
+    },
+    "gitee": {
+      "name": "gitee",
+      "owner": "sevth",
+      "repo": "image",
+      "access_token": "00***********************82"
     }
+  },
+  "dir说明": "存放的文件目录 {R} 根据文件后缀判断文件类型，使用对应的路径，时间格式 {Y}:2020 {y}:20 {M}:Apr {m}:04 {d}:01",
+  "directory": "test/{Y}/{m}",
+  "primary_domain": "",
+  "uses": [
+    "ucloud"
+  ],
+  "dsn": {
+    "uses": "sqlite3",
+    "protocol": "",
+    "username": "",
+    "password": "",
+    "dbname": "",
+    "dsn_link": "",
+    "debug": false
+  }
 }
 `
 }
