@@ -18,7 +18,7 @@ type Aliyun struct {
 	CustomDomain    string `json:"custom_domain"`
 }
 
-func aliyun() (link string) {
+func (a Aliyun)upload(info *fileInfo) (link string) {
 	util.Log.Info("使用 aliyun SDK 上传")
 	AliConfig := config.StorageTypes.Aliyun
 	client, err := oss.New(AliConfig.Endpoint, AliConfig.AccessKeyId, AliConfig.AccessKeySecret)
@@ -31,21 +31,15 @@ func aliyun() (link string) {
 		util.Log.Error("Aliyun SDK throw err ", err)
 		return
 	}
-	err = aliyunUploadMethod(bucket)
+	if info.fileSize <= maxFileSize {	// 直接上传，最大5G文件
+		err = bucket.PutObjectFromFile(info.fileKey, info.filePath)
+	} else {	// 分片上传，支持断点续传
+		err = bucket.UploadFile(info.fileKey, info.filePath, partSize, oss.Routines(8), oss.Checkpoint(true, ""))
+	}
 	if err != nil {
 		util.Log.Error("Aliyun SDK throw err ", err)
 		return
 	}
 
-	return util.MakeReturnLink(AliConfig.CustomDomain, AliConfig.BucketName, AliConfig.Endpoint)
-
-}
-
-func aliyunUploadMethod(bucket *oss.Bucket) (err error) {
-	if fileSize <= maxFileSize {
-		err = bucket.PutObjectFromFile(fileKey, filePath)
-		return
-	}
-	err = bucket.UploadFile(fileKey, filePath, partSize, oss.Routines(8), oss.Checkpoint(true, ""))
-	return
+	return util.MakeReturnLink(a.CustomDomain, a.BucketName, a.Endpoint, info.fileKey)
 }

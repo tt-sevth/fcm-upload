@@ -7,7 +7,9 @@
 
 package core
 
-import "github.com/ufilesdk-dev/ufile-gosdk"
+import (
+	"github.com/ufilesdk-dev/ufile-gosdk"
+)
 
 type Ucloud struct {
 	Name            string `json:"name"`
@@ -18,40 +20,30 @@ type Ucloud struct {
 	CustomDomain    string `json:"custom_domain"`
 }
 
-func ucloud() (link string) {
+func (u Ucloud)upload(info *fileInfo) (link string) {
 	util.Log.Info("使用 uclod SDK 上传")
-	UConfig := config.StorageTypes.Ucloud
-	UC := &ufsdk.Config{
-		PublicKey:       UConfig.PublicKey,
-		PrivateKey:      UConfig.PrivateKey,
-		BucketName:      UConfig.BucketName,
-		FileHost:        UConfig.Endpoint,
+	client, err := ufsdk.NewFileRequest(&ufsdk.Config{
+		PublicKey:       u.PublicKey,
+		PrivateKey:      u.PrivateKey,
+		BucketName:      u.BucketName,
+		FileHost:        u.Endpoint,
 		VerifyUploadMD5: true,
-	}
-	client, err := ufsdk.NewFileRequest(UC, nil)
-	if err != nil {
-		util.Log.Error("Ucloud SDK throw err ", err)
-		return
-	}
-	//fileKey := Util.MakeFileKey(c.Directory, FilePath)
-	err = ucloudUploadMethod(client)
+	}, nil)
 	if err != nil {
 		util.Log.Error("Ucloud SDK throw err ", err)
 		return
 	}
 
-	return util.MakeReturnLink(UConfig.CustomDomain, UConfig.BucketName, UConfig.Endpoint)
-}
-
-func ucloudUploadMethod(client *ufsdk.UFileRequest) (err error) {
-	if err = client.UploadHit(filePath, fileKey); err == nil {
-		util.Log.Info("文件秒传至Ucloud成功")
-		return nil
+	if info.fileSize <= maxFileSize {
+		err = client.PutFile(info.filePath, info.fileKey, info.fileMime)
+	} else {
+		err = client.AsyncUpload(info.filePath, info.fileKey, info.fileMime, 8)
 	}
-	if fileSize <= maxFileSize {
-		err = client.PutFile(filePath, fileKey, fileMime)
+	if err != nil {
+		util.Log.Error("Ucloud SDK throw err ", err)
 		return
 	}
-	err = client.AsyncUpload(filePath, fileKey, fileMime, 8)
-	return
+
+	return util.MakeReturnLink(u.CustomDomain, u.BucketName, u.Endpoint, info.fileKey)
 }
+

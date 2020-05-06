@@ -9,8 +9,8 @@ package core
 
 import (
 	"context"
-	"github.com/qiniu/api.v7/auth/qbox"
-	"github.com/qiniu/api.v7/storage"
+	qnQbox "github.com/qiniu/api.v7/auth/qbox"
+	qnStorage "github.com/qiniu/api.v7/storage"
 )
 
 type Qiniu struct {
@@ -22,37 +22,34 @@ type Qiniu struct {
 	CustomDomain string `json:"custom_domain"`
 }
 
-func qiniu()(link string) {
-	QConfig := config.StorageTypes.Qiniu
-	reg, err := storage.GetRegion(QConfig.AK, QConfig.BucketName)
+func (q Qiniu)upload(info *fileInfo)(link string) {
+	region, err := qnStorage.GetRegion(q.AK, q.BucketName)
 	if err != nil {
 		util.Log.Error("Qiniu SDK throw err ", err)
 		return
 	}
-	cfg := storage.Config{
-		Zone: reg,
+	cfg := &qnStorage.Config{
+		Zone: region,
 	}
-	putPolicy := storage.PutPolicy{
-		Scope: QConfig.BucketName,
+	putPolicy := &qnStorage.PutPolicy{
+		Scope: q.BucketName,
 	}
-	upToken := putPolicy.UploadToken(qbox.NewMac(QConfig.AK, QConfig.SK))
+	upToken := putPolicy.UploadToken(qnQbox.NewMac(q.AK, q.SK))
 
-	err = qiniuUploadMethod(&cfg, upToken)
+	if info.fileSize <= maxFileSize {
+		formUploader := qnStorage.NewFormUploader(cfg)
+		ret := &qnStorage.PutRet{}
+		err = formUploader.PutFile(context.Background(), ret, upToken, info.fileKey, info.filePath, nil)
+	} else {
+		resumeUploader := qnStorage.NewResumeUploader(cfg)
+		ret := &qnStorage.PutRet{}
+		putExtra := &qnStorage.RputExtra{}
+		err = resumeUploader.PutFile(context.Background(), ret, upToken, info.fileKey, info.filePath, putExtra)
+	}
+
 	if err != nil {
 		util.Log.Error("Qiniu SDK throw err ", err)
 		return
 	}
-	return util.MakeReturnLink(QConfig.CustomDomain, QConfig.BucketName, QConfig.Endpoint)
-}
-
-func qiniuUploadMethod(cfg *storage.Config, upToken string) (err error) {
-	if fileSize <= maxFileSize {
-		formUploader := storage.NewFormUploader(cfg)
-		ret := storage.PutRet{}
-		return formUploader.PutFile(context.Background(), &ret, upToken, fileKey, filePath, nil)
-	}
-	resumeUploader := storage.NewResumeUploader(cfg)
-	ret := storage.PutRet{}
-	putExtra := storage.RputExtra{}
-	return resumeUploader.PutFile(context.Background(), &ret, upToken, fileKey, filePath, &putExtra)
+	return util.MakeReturnLink(q.CustomDomain, q.BucketName, q.Endpoint, info.fileKey)
 }

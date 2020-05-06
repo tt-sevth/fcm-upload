@@ -9,7 +9,6 @@ package core
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 )
 
@@ -19,39 +18,40 @@ type Smms struct {
 	Proxy       string `json:"proxy"`
 }
 
-func smms() (link string) {
-	if fileSize > 5<<20 {
+func (s Smms)upload(info *fileInfo) (link string) {
+	util.Log.Info("smms upload")
+	if info.fileSize > 5<<20 {
 		return
 	}
-	token := config.StorageTypes.Smms.AccessToken
-	if token == "" {
-		token = "EVYkI2DGsBGcWnt8LK4AtGoGag3qcyQY"
-	}
+	token := s.AccessToken
 
 	post, err := NewPost(&RequestInputConfig{
 		Url:    "https://sm.ms/api/v2/upload",
 		Proxy:  config.StorageTypes.Smms.Proxy,
 		Client: nil,
 		Body: &RequestBodyField{
-			file:  map[string]string{"smfile": filePath},
+			file:  map[string]string{"smfile": info.filePath},
 			field: map[string]string{"format": "json"},
 		},
 	})
 	if err != nil {
 		util.Log.Error("smms throw err ", err)
-		return ""
+		return
 	}
 	post.SetHeader("Authorization", token)
 
 	resp, err := post.Send()
 
 	if err != nil {
-		fmt.Println(err)
+		util.Log.Error("smms throw err ", err)
+		return
 	}
+
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
 		util.Log.Error("smms resp statusCode ", resp.StatusCode)
+		return
 	}
 
 	type Result struct {

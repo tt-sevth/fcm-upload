@@ -72,7 +72,7 @@ func (u Util) OpenFile(FilePath string) (*os.File, error) {
 
 // 只读方式读取文件
 func (u Util) OpenFileByReadOnly(FilePath string) (*os.File, error) {
-	return os.Open(filePath)
+	return os.Open(FilePath)
 }
 
 // 检查文件是否存在
@@ -246,7 +246,7 @@ func (u Util) GetFileMimeType(path string) string {
 }
 
 // 根据传入的自定义域名，生成返回链接
-func (u Util) MakeReturnLink(customDomain, bucketName, Endpoint string) (link string) {
+func (u Util) MakeReturnLink(customDomain, bucketName, Endpoint, fileKey string) (link string) {
 	if customDomain == "" {
 		customDomain = "https://" + bucketName + "." + Endpoint
 	}
@@ -287,7 +287,7 @@ func (u Util) SetClipboard(name, link []string) error {
 	img := []string{
 		"jpg", "jpeg", "png", "gif", "bmp", "ico",
 	}
-	for i, _ := range name {
+	for i := 0; i < len(name); i++ {
 		ext := strings.ToLower(strings.TrimLeft(u.GetFileExt(link[i]), "."))
 		temp = link[i] + "\n"
 		if collection.Collect(img).Contains(ext) {
@@ -367,35 +367,6 @@ func getHomeDir() string {
 	return home
 }
 
-// 生成表单
-//func (u Util) makeForm(file, field map[string]string) (*bytes.Buffer, string) {
-//	var buffer = new(bytes.Buffer)
-//	w := multipart.NewWriter(buffer)
-//	for keyName, fp := range file {
-//		fw, err := w.CreateFormFile(keyName, fp)
-//		if err != nil {
-//			fmt.Println(err)
-//		}
-//		fd, err := u.OpenFileByReadOnly(fp)
-//		if err != nil {
-//			fmt.Println(err)
-//		}
-//		_, err = io.Copy(fw, fd)
-//		fd.Close()
-//	}
-//
-//	for k, v := range field {
-//		err := w.WriteField(k, v)
-//		if err != nil {
-//			fmt.Println(err)
-//		}
-//	}
-//	c := w.FormDataContentType()
-//
-//	defer w.Close()
-//	return buffer, c
-//}
-
 // 切割文件块
 func (u Util) divideCeil(a, b int64) int {
 	div := float64(a) / float64(b)
@@ -404,6 +375,6 @@ func (u Util) divideCeil(a, b int64) int {
 }
 
 // github gitee 等文件 base64
-func (u Util)Base64Content(byte []byte) string {
+func (u Util) Base64Content(byte []byte) string {
 	return base64.StdEncoding.EncodeToString(byte)
 }

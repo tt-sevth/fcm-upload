@@ -24,56 +24,50 @@ type JD struct {
 	CustomDomain    string `json:"custom_domain"`
 }
 
-func jd() (link string) {
+func (jd JD)upload(info *fileInfo) (link string) {
+	var err error
 	var region string
-	jdConfig := config.StorageTypes.JD
-
-	if jdConfig.Endpoint != "" {
-		region = strings.Split(jdConfig.Endpoint, ".")[1]
+	if jd.Endpoint != "" {
+		region = strings.Split(jd.Endpoint, ".")[1]
 	}
 
 	sess := session.Must(session.NewSession(&aws.Config{
-		Endpoint:    aws.String(jdConfig.Endpoint),
+		Endpoint:    aws.String(jd.Endpoint),
 		Region:      aws.String(region),
 		DisableSSL:  aws.Bool(false),
-		Credentials: credentials.NewStaticCredentials(jdConfig.AccessKeyId, jdConfig.AccessKeySecret, ""),
+		Credentials: credentials.NewStaticCredentials(jd.AccessKeyId, jd.AccessKeySecret, ""),
 	}))
 
 	svc := s3.New(sess)
 
-	err := jdUploadMethod(svc, jdConfig.BucketName)
+	// 普通上传
+	if info.fileSize <= maxFileSize {
+		fd, _ := util.OpenFileByReadOnly(info.filePath)
+		defer fd.Close()
+		_, err = svc.PutObject(&s3.PutObjectInput{
+			Body:       aws.ReadSeekCloser(fd),
+			Bucket:     aws.String(jd.BucketName),
+			ContentMD5: aws.String(info.fileMD5),
+			Key:        aws.String(info.fileKey),
+		})
+	} else {
+		// 分片上传
+		util.Log.Info("京东云使用分片上传文件：", info.fileName)
+		//upload := NewAwsMultiPartUpload()
+		upload := &AwsMultiPartUpload{
+			Bucket:   jd.BucketName,
+			FilePath: info.filePath,
+			FileSize: info.fileSize,
+			FileKey:  info.fileKey,
+			FileMime: info.fileMime,
+			PartSize: partSize,
+		}
+		err = upload.AwsMultipartUpload(svc)
+	}
 
 	if err != nil {
 		util.Log.Error("JD By AWS SDK throw err ", err)
 		return
 	}
-	return util.MakeReturnLink(jdConfig.CustomDomain, jdConfig.BucketName, jdConfig.Endpoint)
-}
-
-func jdUploadMethod(svc *s3.S3, bucket string) (err error) {
-	// 普通上传
-	if fileSize <= maxFileSize {
-		fd, _ := util.OpenFileByReadOnly(filePath)
-		defer fd.Close()
-		_, err = svc.PutObject(&s3.PutObjectInput{
-			Body:       aws.ReadSeekCloser(fd),
-			Bucket:     aws.String(bucket),
-			ContentMD5: aws.String(fileMD5),
-			Key:        aws.String(fileKey),
-		})
-		return
-	}
-
-	// 分片上传
-	util.Log.Info("京东云使用分片上传文件：", fileName)
-	//upload := NewAwsMultiPartUpload()
-	upload := &AwsMultiPartUpload{
-		Bucket:   bucket,
-		FilePath: filePath,
-		FileSize: fileSize,
-		FileKey:  fileKey,
-		FileMime: fileMime,
-		PartSize: partSize,
-	}
-	return upload.AwsMultipartUpload(svc)
+	return util.MakeReturnLink(jd.CustomDomain, jd.BucketName, jd.Endpoint, info.fileKey)
 }
