@@ -20,27 +20,24 @@ type Baidu struct {
 	CustomDomain    string `json:"custom_domain"`
 }
 
-func baidu() (link string) {
+func (b Baidu)upload(info *fileInfo) (link string) {
 	util.Log.Info("使用 Baidu SDK 上传")
-	BConfig := config.StorageTypes.Baidu
-	client, err := bos.NewClient(BConfig.AccessKeyId, BConfig.SecretAccessKey, BConfig.Endpoint)
+	client, err := bos.NewClient(b.AccessKeyId, b.SecretAccessKey, b.Endpoint)
 	if err != nil {
 		util.Log.Error("Baidu SDK throw err ", err)
 		return
 	}
-	err = baiduUploadMethod(client, BConfig.BucketName)
-	if err != nil {
-		util.Log.Error("Baidu SDK throw err ", err)
-		return
-	}
-	return util.MakeReturnLink(BConfig.CustomDomain, BConfig.BucketName, BConfig.Endpoint)
-}
 
-func baiduUploadMethod(client *bos.Client, bucket string) (err error) {
-	if fileSize <= maxFileSize {
-		_, err = client.PutObjectFromFile(bucket, fileKey, filePath, nil)
+	if info.fileSize <= maxFileSize {
+		_, err = client.PutObjectFromFile(b.BucketName, info.fileKey, info.filePath, nil)
+	} else {
+		_, err = client.ParallelUpload(b.BucketName, info.fileKey, info.filePath, "", nil)
+
+	}
+
+	if err != nil {
+		util.Log.Error("Baidu SDK throw err ", err)
 		return
 	}
-	_, err = client.ParallelUpload(bucket, fileKey, filePath, "", nil)
-	return
+	return util.MakeReturnLink(b.CustomDomain, b.BucketName, b.Endpoint, info.fileKey)
 }

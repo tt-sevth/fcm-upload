@@ -10,12 +10,14 @@ package core
 import (
 	"bytes"
 	"crypto/md5"
+	"encoding/base64"
 	"fmt"
 	"github.com/chenhg5/collection"
 	"github.com/gen2brain/beeep"
 	"github.com/sevth-developer/clipboard"
 	"go.uber.org/zap"
 	"io/ioutil"
+	"math"
 	"math/rand"
 	"net/http"
 	"os"
@@ -66,6 +68,11 @@ func (u *Util) initUtil() {
 // 打开文件
 func (u Util) OpenFile(FilePath string) (*os.File, error) {
 	return os.OpenFile(FilePath, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
+}
+
+// 只读方式读取文件
+func (u Util) OpenFileByReadOnly(FilePath string) (*os.File, error) {
+	return os.Open(FilePath)
 }
 
 // 检查文件是否存在
@@ -239,12 +246,12 @@ func (u Util) GetFileMimeType(path string) string {
 }
 
 // 根据传入的自定义域名，生成返回链接
-func (u Util) MakeReturnLink( customDomain, bucketName, Endpoint string) (link string) {
+func (u Util) MakeReturnLink(customDomain, bucketName, Endpoint, fileKey string) (link string) {
 	if customDomain == "" {
 		customDomain = "https://" + bucketName + "." + Endpoint
 	}
-	if customDomain[len(customDomain) - 1] == '/' {
-		customDomain = customDomain[:len(customDomain) - 1]
+	if customDomain[len(customDomain)-1] == '/' {
+		customDomain = customDomain[:len(customDomain)-1]
 	}
 	link = customDomain + "/" + fileKey
 	return
@@ -280,7 +287,7 @@ func (u Util) SetClipboard(name, link []string) error {
 	img := []string{
 		"jpg", "jpeg", "png", "gif", "bmp", "ico",
 	}
-	for i, _ := range name {
+	for i := 0; i < len(name); i++ {
 		ext := strings.ToLower(strings.TrimLeft(u.GetFileExt(link[i]), "."))
 		temp = link[i] + "\n"
 		if collection.Collect(img).Contains(ext) {
@@ -358,4 +365,16 @@ func getHomeDir() string {
 		home = "./"
 	}
 	return home
+}
+
+// 切割文件块
+func (u Util) divideCeil(a, b int64) int {
+	div := float64(a) / float64(b)
+	c := math.Ceil(div)
+	return int(c)
+}
+
+// github gitee 等文件 base64
+func (u Util) Base64Content(byte []byte) string {
+	return base64.StdEncoding.EncodeToString(byte)
 }

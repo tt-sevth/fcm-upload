@@ -9,89 +9,110 @@ package core
 
 import (
 	"errors"
+	"github.com/chenhg5/collection"
 	"reflect"
 )
 
 const (
 	partSize    int64 = 2 << 21
-	maxFileSize       = 2 << 26
+	maxFileSize int64 = 2 << 26
 )
+
+var ExceptUses = []string{
+	"smms",
+	"gitee",
+}
 
 type Storage struct {
 	Ucloud  *Ucloud  `json:"ucloud"`
 	Aliyun  *Aliyun  `json:"aliyun"`
 	Tencent *Tencent `json:"tencent"`
 	Baidu   *Baidu   `json:"baidu"`
+	JD      *JD      `json:"jd"`
 	Qiniu   *Qiniu   `json:"qiniu"`
 	Upyun   *Upyun   `json:"upyun"`
+	Smms    *Smms    `json:"smms"`
+	Gitee   *Gitee   `json:"gitee"`
 }
 
-var filePath, fileName, fileMD5, fileMime, fileKey string
-var fileSize int64
+type fileInfo struct {
+	filePath string
+	fileName string
+	fileMD5  string
+	fileMime string
+	fileKey  string
+	fileSize int64
+}
 
-func Upload(path string) (result []*DbData, EOne []bool) {
+func Upload(path string) (result []*DbData, ExceptSave []bool) {
 	util.Log.Info("初始化上传模块。")
-	fileName, fileMD5, fileMime, filePath, fileSize = util.FileInfo(path)
-	fileKey = util.MakeFileKey(config.Directory, filePath)
+	var storage = config.StorageTypes
+	var UploadStorage = map[string]interface{}{
+		"ucloud":  storage.Ucloud.upload,
+		"aliyun":  storage.Aliyun.upload,
+		"tencent": storage.Tencent.upload,
+		"baidu":   storage.Baidu.upload,
+		"jd":      storage.JD.upload,
+		"qiniu":   storage.Qiniu.upload,
+		"upyun":   storage.Upyun.upload,
+		"smms":    storage.Smms.upload,
+		"gitee":   storage.Gitee.upload,
+	}
+
+	info := &fileInfo{}
+	info.fileName, info.fileMD5, info.fileMime, info.filePath, info.fileSize = util.FileInfo(path)
+	info.fileKey = util.MakeFileKey(config.Directory, path)
 
 	if len(config.Uses) < 1 {
 		util.Log.Fatal("未设置可用的存储服务商。")
 	}
 	util.Log.Info("将使用的所有上传服务商是 - ", config.Uses)
-	funcMap := getStorageMethodMap()
-	util.Log.Info("获取 funcMap 完成 - ", funcMap)
+	util.Log.Info("获取 uploadMap - ", UploadStorage)
 
-	//var filePath string = "./test.tar.gz"
 	for _, v := range config.Uses {
 		if v == "" {
 			util.Log.Error("uses 设置不正确")
 			continue //为空的选项跳过
 		}
+		// 添加一个列表，在列表中的uses只能上传图片
+		if collection.Collect(ExceptUses).Contains(v) && util.GetArchiveDirName(path) != "picture" {
+			util.Log.Error("跳过上传至'", v, "'")
+			continue
+		}
 		// =======================================
 		// 处理数据库已存在的记录，直接返回
-		if res := db.QueryOne(fileMD5, v); res != nil {
-			util.Log.Info(`数据库中已存在记录，跳过上传'`, fileName, `'到'`, v, `'`)
-			EOne = append(EOne, true)
+		if res := db.QueryOne(info.fileMD5, v); res != nil {
+			util.Log.Info(`数据库中已存在记录，跳过上传'`, info.fileName, `'到'`, v, `'`)
+			ExceptSave = append(ExceptSave, true)
 			result = append(result, res)
 			continue
 		}
 		// =======================================
-		util.Log.Info(v, "上传至 bucket 的全路径为 ", fileKey)
-		res, err := call(funcMap, v)
+		util.Log.Info("空间'", v, "'fileKey is ", info.fileKey)
+		res, err := call(UploadStorage, v, info)
 		if err != nil {
 			util.Log.Error(err)
 			//_ = util.SendUploadFailedNotify(method)
 			continue // 上传错误的话跳过此条
 		}
-		EOne = append(EOne, false)
+		ExceptSave = append(ExceptSave, false)
 		util.Log.Info(v, "返回结果为 - ", res)
-		result = append(result, makeData(v, filePath, res))
+		result = append(result, makeData(v, res, info))
 	}
 	util.Log.Info(`-------------------此文件已全部处理完成。-------------------`)
 	return
 }
 
-func getStorageMethodMap() map[string]interface{} {
-	return map[string]interface{}{
-		"ucloud":  ucloud,
-		"aliyun":  aliyun,
-		"tencent": tencent,
-		"baidu":   baidu,
-		"qiniu":   qiniu,
-		"upyun":   upyun,
-	}
-}
-
-func makeData(usesName, filePath, res string) *DbData {
+func makeData(usesName, res string, info *fileInfo) *DbData {
 	D := new(DbData)
 	D.Uses = usesName
-	D.FileName = fileName
-	D.FileMd5 = fileMD5
-	D.FileMime = fileMime
-	D.FilePath = filePath
+	D.FileName = info.fileName
+	D.FileMd5 = info.fileMD5
+	D.FileMime = info.fileMime
+	D.FilePath = info.filePath
 	D.Link = res
 	if config.PrimaryDomain != "" {
-		D.Link = config.PrimaryDomain + "/" + fileKey
+		D.Link = config.PrimaryDomain + "/" + info.fileKey
 	}
 	return D
 }

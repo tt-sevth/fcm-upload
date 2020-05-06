@@ -89,7 +89,7 @@ func InitDB() *Db {
 }
 
 // 日志记录 当配置文件开启时记录 (目前好像没什么用 =.=)
-func (db Db) logger(b bool) {
+func (d Db) logger(b bool) {
 	if b {
 		engine.ShowSQL(true)
 		engine.Logger().SetLevel(log.LOG_DEBUG)
@@ -100,7 +100,7 @@ func (db Db) logger(b bool) {
 }
 
 // 保存数据到数据库
-func (db Db) Save(data [][]*DbData) error {
+func (d Db) Save(data [][]*DbData) error {
 	for k, v := range data {
 		for i, d := range v {
 			if util.Except[k][i] {
@@ -117,7 +117,7 @@ func (db Db) Save(data [][]*DbData) error {
 }
 
 // 控制台查询 返回多条记录
-func (db Db) Query(filePath string) []*DbData {
+func (d Db) Query(filePath string) []*DbData {
 	md5 := util.GetFileMD5(filePath)
 	data := make([]*DbData, 0)
 	_ = engine.Where("file_md5 = ?", md5).Find(&data)
@@ -125,7 +125,7 @@ func (db Db) Query(filePath string) []*DbData {
 }
 
 // 查询文件是否存在记录并返回一条记录
-func (db Db) QueryOne(md5, uses string) *DbData {
+func (d Db) QueryOne(md5, uses string) *DbData {
 	data := new(DbData)
 	has, err := engine.Where("file_md5 = ? and uses = ?", md5, uses).Get(data)
 	//defer engine.Close() 	// 查询会自动关闭，这里不需要
@@ -139,6 +139,6 @@ func (db Db) QueryOne(md5, uses string) *DbData {
 }
 
 // 导出所有数据
-func (db Db) Dump() {
+func (d Db) Dump() {
 	_ = engine.DumpAllToFile(util.SavePath + "/dumpAll.sql")
 }
