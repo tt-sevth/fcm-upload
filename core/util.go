@@ -10,16 +10,15 @@ package core
 import (
 	"bytes"
 	"crypto/md5"
+	"encoding/base64"
 	"fmt"
 	"github.com/chenhg5/collection"
 	"github.com/gen2brain/beeep"
 	"github.com/sevth-developer/clipboard"
 	"go.uber.org/zap"
-	"io"
 	"io/ioutil"
 	"math"
 	"math/rand"
-	"mime/multipart"
 	"net/http"
 	"os"
 	"os/exec"
@@ -41,7 +40,6 @@ type Util struct {
 	Log        *zap.SugaredLogger
 	Except     [][]bool
 	Method     string
-	ExceptUses []string
 }
 
 var util *Util
@@ -63,7 +61,6 @@ func (u *Util) initUtil() {
 	u.SavePath = u.WorkDir + "/save"
 	// 设置 log
 	u.Log = NewLogger()
-	u.ExceptUses = []string{"smms"}
 }
 
 // 以下为工具集的方法
@@ -371,37 +368,42 @@ func getHomeDir() string {
 }
 
 // 生成表单
-func (u Util) makeForm(file, field map[string]string) (*bytes.Buffer, string) {
-	var buffer = new(bytes.Buffer)
-	w := multipart.NewWriter(buffer)
-	for keyName, fp := range file {
-		fw, err := w.CreateFormFile(keyName, fp)
-		if err != nil {
-			fmt.Println(err)
-		}
-		fd, err := u.OpenFileByReadOnly(fp)
-		if err != nil {
-			fmt.Println(err)
-		}
-		_, err = io.Copy(fw, fd)
-		fd.Close()
-	}
-
-	for k, v := range field {
-		err := w.WriteField(k, v)
-		if err != nil {
-			fmt.Println(err)
-		}
-	}
-	c := w.FormDataContentType()
-
-	defer w.Close()
-	return buffer, c
-}
+//func (u Util) makeForm(file, field map[string]string) (*bytes.Buffer, string) {
+//	var buffer = new(bytes.Buffer)
+//	w := multipart.NewWriter(buffer)
+//	for keyName, fp := range file {
+//		fw, err := w.CreateFormFile(keyName, fp)
+//		if err != nil {
+//			fmt.Println(err)
+//		}
+//		fd, err := u.OpenFileByReadOnly(fp)
+//		if err != nil {
+//			fmt.Println(err)
+//		}
+//		_, err = io.Copy(fw, fd)
+//		fd.Close()
+//	}
+//
+//	for k, v := range field {
+//		err := w.WriteField(k, v)
+//		if err != nil {
+//			fmt.Println(err)
+//		}
+//	}
+//	c := w.FormDataContentType()
+//
+//	defer w.Close()
+//	return buffer, c
+//}
 
 // 切割文件块
 func (u Util) divideCeil(a, b int64) int {
 	div := float64(a) / float64(b)
 	c := math.Ceil(div)
 	return int(c)
+}
+
+// github gitee 等文件 base64
+func (u Util)Base64Content(byte []byte) string {
+	return base64.StdEncoding.EncodeToString(byte)
 }

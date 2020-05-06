@@ -68,12 +68,12 @@ func jdUploadMethod(svc *s3.S3, bucket string) (err error) {
 	util.Log.Info("京东云使用分片上传文件：", fileName)
 	//upload := NewAwsMultiPartUpload()
 	upload := &AwsMultiPartUpload{
-		Bucket:         bucket,
-		FilePath:       filePath,
-		FileSize:       fileSize,
-		FileKey:        fileKey,
-		FileMime:       fileMime,
-		PartSize:       partSize,
+		Bucket:   bucket,
+		FilePath: filePath,
+		FileSize: fileSize,
+		FileKey:  fileKey,
+		FileMime: fileMime,
+		PartSize: partSize,
 	}
 	return upload.AwsMultipartUpload(svc)
 }

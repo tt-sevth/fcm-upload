@@ -11,8 +11,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
-	"net/url"
 )
 
 type Smms struct {
@@ -25,29 +23,27 @@ func smms() (link string) {
 	if fileSize > 5<<20 {
 		return
 	}
-	body, contentType := util.makeForm(map[string]string{"smfile": filePath}, map[string]string{"format": "json"})
 	token := config.StorageTypes.Smms.AccessToken
 	if token == "" {
 		token = "EVYkI2DGsBGcWnt8LK4AtGoGag3qcyQY"
 	}
 
-	req, err := http.NewRequest("POST", "https://sm.ms/api/v2/upload", body)
+	post, err := NewPost(&RequestInputConfig{
+		Url:    "https://sm.ms/api/v2/upload",
+		Proxy:  config.StorageTypes.Smms.Proxy,
+		Client: nil,
+		Body: &RequestBodyField{
+			file:  map[string]string{"smfile": filePath},
+			field: map[string]string{"format": "json"},
+		},
+	})
 	if err != nil {
-		fmt.Println(err)
+		util.Log.Error("smms throw err ", err)
+		return ""
 	}
-	req.Header.Set("Content-Type", contentType)
-	req.Header.Add("Authorization", token)
+	post.SetHeader("Authorization", token)
 
-	client := &http.Client{}
-	if config.StorageTypes.Smms.Proxy != "" {
-		client = &http.Client{Transport: &http.Transport{
-			Proxy: func(_ *http.Request) (*url.URL, error) {
-				return url.Parse(config.StorageTypes.Smms.Proxy)
-			},
-		}}
-	}
-	//resp, err := http.DefaultClient.Do(req)
-	resp, err := client.Do(req)
+	resp, err := post.Send()
 
 	if err != nil {
 		fmt.Println(err)
@@ -55,7 +51,7 @@ func smms() (link string) {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		fmt.Println(resp.StatusCode)
+		util.Log.Error("smms resp statusCode ", resp.StatusCode)
 	}
 
 	type Result struct {

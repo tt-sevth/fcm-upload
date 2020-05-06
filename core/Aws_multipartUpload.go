@@ -82,7 +82,7 @@ func (a *AwsMultiPartUpload) awsMultiPartUpload(svc *s3.S3) error {
 
 	wg := &sync.WaitGroup{}
 	for i := 0; i != a.chunkCount; i++ {
-		println(i)
+		//println(i)
 		wg.Add(1)
 		go func(pos int) { // 第几个块，取偏移量
 			defer wg.Done()                     // 完成分片，计数器减一
@@ -161,7 +161,7 @@ func (a *AwsMultiPartUpload) uploadPart(svc *s3.S3, resp *s3.CreateMultipartUplo
 				PartNumber: aws.Int64(int64(pos)),
 			}
 			a.CompletedParts[pos] = temp
-			println(a.CompletedParts[pos])
+			//println(a.CompletedParts[pos])
 			a.mux.Unlock() //解锁
 			return nil     // 不返回的话会无限循环
 		}
