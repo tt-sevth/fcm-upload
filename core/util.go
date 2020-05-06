@@ -203,7 +203,7 @@ func (u Util) GetFileNameWithoutExt(FilePath string) string {
 	var name string
 	ext := u.GetFileExt(FilePath)
 	for i := len(FilePath) - 1; i >= 0; i-- {
-		if FilePath[i] == '/' {
+		if FilePath[i] == '/' || FilePath[i] == '\\' {	//在win下使用反斜杠
 			name = FilePath[i+1:]
 			break
 		}
