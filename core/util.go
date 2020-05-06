@@ -17,6 +17,7 @@ import (
 	"go.uber.org/zap"
 	"io"
 	"io/ioutil"
+	"math"
 	"math/rand"
 	"mime/multipart"
 	"net/http"
@@ -369,6 +370,7 @@ func getHomeDir() string {
 	return home
 }
 
+// 生成表单
 func (u Util) makeForm(file, field map[string]string) (*bytes.Buffer, string) {
 	var buffer = new(bytes.Buffer)
 	w := multipart.NewWriter(buffer)
@@ -395,4 +397,11 @@ func (u Util) makeForm(file, field map[string]string) (*bytes.Buffer, string) {
 
 	defer w.Close()
 	return buffer, c
+}
+
+// 切割文件块
+func (u Util) divideCeil(a, b int64) int {
+	div := float64(a) / float64(b)
+	c := math.Ceil(div)
+	return int(c)
 }
