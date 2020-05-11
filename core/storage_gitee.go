@@ -8,15 +8,17 @@
 package core
 
 import (
+	"encoding/json"
 	"io/ioutil"
+	"net/http"
 	"os"
 )
 
 type Gitee struct {
-	Name        string	`json:"name"`
-	Owner       string	`json:"owner"`
-	Repo        string	`json:"repo"`
-	AccessToken string	`json:"access_token"`
+	Name        string `json:"name"`
+	Owner       string `json:"owner"`
+	Repo        string `json:"repo"`
+	AccessToken string `json:"access_token"`
 }
 
 func (g Gitee) upload(info *fileInfo) (link string) {
@@ -37,9 +39,9 @@ func (g Gitee) upload(info *fileInfo) (link string) {
 		return
 	}
 
-	post, err := NewPost(&RequestInputConfig{
+	post, err := NewPost(&PostRequestInputConfig{
 		Url: url,
-		Body: &RequestBodyField{
+		Body: &PostRequestBodyField{
 			file: nil,
 			field: map[string]string{
 				"access_token": g.AccessToken,
@@ -65,4 +67,42 @@ func (g Gitee) upload(info *fileInfo) (link string) {
 	}
 
 	return "https://gitee.com/" + g.Owner + "/" + g.Repo + "/raw/master/" + info.fileKey
+}
+
+func (g Gitee) delete(info *fileInfo) bool {
+	type shaResp struct {
+		Sha string `json:"sha"`
+	}
+	url := "https://gitee.com/api/v5/repos/" + g.Owner + "/" + g.Repo + "/contents/" + info.fileKey + "?access_token=" + g.AccessToken
+	resp, err := http.Get(url)
+
+	if err != nil {
+		util.Log.Error("gitee throw err ", err)
+		return false
+	}
+
+	defer resp.Body.Close()
+	shaR := &shaResp{}
+	respBody, _ := ioutil.ReadAll(resp.Body)
+	_ = json.Unmarshal(respBody, shaR)
+
+	if shaR.Sha == "" {
+		return false
+	}
+
+	deleteUrl := url + "&sha=" + shaR.Sha + "&message=delete+image：" + info.fileKey
+	req, err := http.NewRequest(http.MethodDelete, deleteUrl, nil)
+
+	resp, err = http.DefaultClient.Do(req)
+	if err != nil {
+		util.Log.Error("gitee throw err ", err)
+		return false
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		util.Log.Error("gitee throw err, statusCode is ", resp.StatusCode)
+		return false
+	}
+	return true
 }

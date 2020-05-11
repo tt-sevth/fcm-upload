@@ -54,3 +54,19 @@ func (u Upyun)upload(info *fileInfo) (link string) {
 	return util.MakeReturnLink(u.CustomDomain, u.BucketName, u.Endpoint, info.fileKey)
 }
 
+func (u Upyun)delete(info *fileInfo) bool {
+	client := upyun2.NewUpYun(&upyun2.UpYunConfig{
+		Bucket:   u.BucketName,
+		Operator: u.Operator,
+		Password: u.Password,
+	})
+
+	err := client.Delete(&upyun2.DeleteObjectConfig{
+		Path: info.fileKey,
+	})
+	if err != nil {
+		util.Log.Error("Upyun SDK throw err ", err)
+		return false
+	}
+	return true
+}

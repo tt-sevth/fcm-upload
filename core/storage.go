@@ -18,11 +18,6 @@ const (
 	maxFileSize int64 = 2 << 26
 )
 
-var ExceptUses = []string{
-	"smms",
-	"gitee",
-}
-
 type Storage struct {
 	Ucloud  *Ucloud  `json:"ucloud"`
 	Aliyun  *Aliyun  `json:"aliyun"`
@@ -59,6 +54,11 @@ func Upload(path string) (result []*DbData, ExceptSave []bool) {
 		"gitee":   storage.Gitee.upload,
 	}
 
+	var ExceptUses = []string{
+		"smms",
+		"gitee",
+	}
+
 	info := &fileInfo{}
 	info.fileName, info.fileMD5, info.fileMime, info.filePath, info.fileSize = util.FileInfo(path)
 	info.fileKey = util.MakeFileKey(config.Directory, path)
@@ -90,34 +90,81 @@ func Upload(path string) (result []*DbData, ExceptSave []bool) {
 		// =======================================
 		util.Log.Info("空间'", v, "'fileKey is ", info.fileKey)
 		res, err := call(UploadStorage, v, info)
+		if res[0].String() == "" {
+			err = errors.New("上传至空间'" + v + "'发生错误！")
+		}
 		if err != nil {
 			util.Log.Error(err)
 			//_ = util.SendUploadFailedNotify(method)
 			continue // 上传错误的话跳过此条
 		}
+		temp := res[0].String()
 		ExceptSave = append(ExceptSave, false)
-		util.Log.Info(v, "返回结果为 - ", res)
-		result = append(result, makeData(v, res, info))
+		util.Log.Info(v, "返回结果为 - ", temp)
+		result = append(result, makeData(v, temp, info))
 	}
 	util.Log.Info(`-------------------此文件已全部处理完成。-------------------`)
 	return
 }
 
 func makeData(usesName, res string, info *fileInfo) *DbData {
-	D := new(DbData)
-	D.Uses = usesName
-	D.FileName = info.fileName
-	D.FileMd5 = info.fileMD5
-	D.FileMime = info.fileMime
-	D.FilePath = info.filePath
-	D.Link = res
+	D := &DbData{
+		FileName: info.fileName,
+		FileMd5:  info.fileMD5,
+		FileMime: info.fileMime,
+		FileKey:  info.fileKey,
+		FilePath: info.filePath,
+		Uses:     usesName,
+		Link:     res,
+	}
+
 	if config.PrimaryDomain != "" {
 		D.Link = config.PrimaryDomain + "/" + info.fileKey
 	}
 	return D
 }
 
-func call(m map[string]interface{}, name string, params ...interface{}) (result string, err error) {
+// delete method
+func Delete(data []*DbData) (int, int) {
+	var storage = config.StorageTypes
+	var DeleteStorage = map[string]interface{}{
+		"ucloud": storage.Ucloud.delete,
+		"aliyun": storage.Aliyun.delete,
+		"baidu":  storage.Baidu.delete,
+		"gitee":  storage.Gitee.delete,
+		"jd":     storage.JD.delete,
+		"qiniu":  storage.Qiniu.delete,
+		"tencent": storage.Tencent.delete,
+		"upyun": storage.Upyun.delete,
+	}
+
+	var success, fail int
+
+	var ExceptUses = []string{
+		"smms",
+	}
+	for _, v := range data {
+		if collection.Collect(ExceptUses).Contains(v.Uses) {
+			continue
+		}
+		res, err := call(DeleteStorage, v.Uses, &fileInfo{
+			fileKey: v.FileKey,
+		})
+
+		if res[0].Interface() == false {
+			err = errors.New("云存储空间'" + v.Uses + "'删除失败！")
+		}
+		if err != nil {
+			fail++
+			util.Log.Error("删除文件'"+v.FileKey+"'存在错误 ", err)
+			continue
+		}
+		success++
+	}
+	return success, fail
+}
+
+func call(m map[string]interface{}, name string, params ...interface{}) (result []reflect.Value, err error) {
 	f := reflect.ValueOf(m[name])
 	if len(params) != f.Type().NumIn() {
 		err = errors.New("the number of params is not adapted")
@@ -127,10 +174,6 @@ func call(m map[string]interface{}, name string, params ...interface{}) (result 
 	for k, param := range params {
 		in[k] = reflect.ValueOf(param)
 	}
-	res := f.Call(in)
-	if res[0].String() == "" {
-		err = errors.New("上传至空间'" + name + "'发生错误！")
-	}
-	result = res[0].String()
+	result = f.Call(in)
 	return
 }

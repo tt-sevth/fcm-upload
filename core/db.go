@@ -36,6 +36,7 @@ type DbData struct {
 	FileName string    `xorm:"varchar(100)" json:"file_name"`
 	FileMd5  string    `xorm:"varchar(32) index" json:"file_md5"`
 	FileMime string    `xorm:"varchar(255)" json:"file_mime"`
+	FileKey  string    `xorm:"varchar(255)" json:"file_key"`
 	FilePath string    `xorm:"varchar(255)" json:"file_path"`
 	Uses     string    `xorm:"varchar(15) index" json:"uses"`
 	Link     string    `xorm:"varchar(255)" json:"link"`
@@ -126,7 +127,7 @@ func (d Db) Query(filePath string) []*DbData {
 
 // 查询文件是否存在记录并返回一条记录
 func (d Db) QueryOne(md5, uses string) *DbData {
-	data := new(DbData)
+	data := &DbData{}
 	has, err := engine.Where("file_md5 = ? and uses = ?", md5, uses).Get(data)
 	//defer engine.Close() 	// 查询会自动关闭，这里不需要
 	if err != nil {
@@ -141,4 +142,20 @@ func (d Db) QueryOne(md5, uses string) *DbData {
 // 导出所有数据
 func (d Db) Dump() {
 	_ = engine.DumpAllToFile(util.SavePath + "/dumpAll.sql")
+}
+
+// 同步删除云数据
+func (d *Db) DeleteSync(filePath string)(int,int) {
+	data := d.Query(filePath)
+	if len(data) == 0 {
+		return 0,0
+	}
+	a,b := Delete(data)
+	d.delete(data[0].FileMd5)
+	return a,b
+}
+
+// 删除某一个文件的数据
+func (d *Db) delete(md5 string) {
+	_, _ = engine.Where("file_md5 = ?", md5).Delete(&DbData{})
 }

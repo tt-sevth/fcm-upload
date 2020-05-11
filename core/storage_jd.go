@@ -24,7 +24,7 @@ type JD struct {
 	CustomDomain    string `json:"custom_domain"`
 }
 
-func (jd JD)upload(info *fileInfo) (link string) {
+func (jd JD) upload(info *fileInfo) (link string) {
 	var err error
 	var region string
 	if jd.Endpoint != "" {
@@ -70,4 +70,29 @@ func (jd JD)upload(info *fileInfo) (link string) {
 		return
 	}
 	return util.MakeReturnLink(jd.CustomDomain, jd.BucketName, jd.Endpoint, info.fileKey)
+}
+
+func (jd JD) delete(info *fileInfo) bool {
+	var err error
+	var region string
+	if jd.Endpoint != "" {
+		region = strings.Split(jd.Endpoint, ".")[1]
+	}
+
+	sess := session.Must(session.NewSession(&aws.Config{
+		Endpoint:    aws.String(jd.Endpoint),
+		Region:      aws.String(region),
+		DisableSSL:  aws.Bool(false),
+		Credentials: credentials.NewStaticCredentials(jd.AccessKeyId, jd.AccessKeySecret, ""),
+	}))
+
+	svc := s3.New(sess)
+	_, err = svc.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(jd.BucketName),
+		Key:    aws.String(info.fileKey),
+	})
+	if err != nil {
+		return false
+	}
+	return true
 }
