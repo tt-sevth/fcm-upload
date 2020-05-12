@@ -48,7 +48,7 @@ func (a Aliyun) upload(info *fileInfo) (link string) {
 		_, err = svc.PutObject(&s3.PutObjectInput{
 			Body:       aws.ReadSeekCloser(fd),
 			Bucket:     aws.String(a.BucketName),
-			//ContentMD5: aws.String(info.fileMD5),
+			ContentMD5: aws.String(info.md5Header),
 			Key:        aws.String(info.fileKey),
 		})
 	} else {

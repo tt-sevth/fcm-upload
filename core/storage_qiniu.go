@@ -49,7 +49,7 @@ func (q Qiniu) upload(info *fileInfo) (link string) {
 		_, err = svc.PutObject(&s3.PutObjectInput{
 			Body:   aws.ReadSeekCloser(fd),
 			Bucket: aws.String(q.BucketName),
-			//ContentMD5: aws.String(info.fileMD5),		//添加MD5校验会失败，暂时不知道原因
+			ContentMD5: aws.String(info.md5Header),		//添加MD5校验会失败，暂时不知道原因
 			Key: aws.String(info.fileKey),
 		})
 	} else {

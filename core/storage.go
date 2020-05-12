@@ -31,12 +31,13 @@ type Storage struct {
 }
 
 type fileInfo struct {
-	filePath string
-	fileName string
-	fileMD5  string
-	fileMime string
-	fileKey  string
-	fileSize int64
+	filePath  string
+	fileName  string
+	fileMD5   string
+	fileMime  string
+	fileKey   string
+	fileSize  int64
+	md5Header string
 }
 
 func Upload(path string) (result []*DbData, ExceptSave []bool) {
@@ -60,7 +61,7 @@ func Upload(path string) (result []*DbData, ExceptSave []bool) {
 	}
 
 	info := &fileInfo{}
-	info.fileName, info.fileMD5, info.fileMime, info.filePath, info.fileSize = util.FileInfo(path)
+	info.fileName, info.fileMD5, info.fileMime, info.filePath, info.md5Header, info.fileSize = util.FileInfo(path)
 	info.fileKey = util.MakeFileKey(config.Directory, path)
 
 	if len(config.Uses) < 1 {
@@ -128,14 +129,14 @@ func makeData(usesName, res string, info *fileInfo) *DbData {
 func Delete(data []*DbData) (int, int) {
 	var storage = config.StorageTypes
 	var DeleteStorage = map[string]interface{}{
-		"ucloud": storage.Ucloud.delete,
-		"aliyun": storage.Aliyun.delete,
-		"baidu":  storage.Baidu.delete,
-		"gitee":  storage.Gitee.delete,
-		"jd":     storage.JD.delete,
-		"qiniu":  storage.Qiniu.delete,
+		"ucloud":  storage.Ucloud.delete,
+		"aliyun":  storage.Aliyun.delete,
+		"baidu":   storage.Baidu.delete,
+		"gitee":   storage.Gitee.delete,
+		"jd":      storage.JD.delete,
+		"qiniu":   storage.Qiniu.delete,
 		"tencent": storage.Tencent.delete,
-		"upyun": storage.Upyun.delete,
+		"upyun":   storage.Upyun.delete,
 	}
 
 	var success, fail int

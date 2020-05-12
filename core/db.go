@@ -8,6 +8,7 @@
 package core
 
 import (
+	"fmt"
 	_ "github.com/denisenkom/go-mssqldb"
 	_ "github.com/go-sql-driver/mysql"
 	_ "github.com/lib/pq"
@@ -119,7 +120,7 @@ func (d Db) Save(data [][]*DbData) error {
 
 // 控制台查询 返回多条记录
 func (d Db) Query(filePath string) []*DbData {
-	md5 := util.GetFileMD5(filePath)
+	md5 := fmt.Sprintf("%x", util.GetFileMD5(filePath))
 	data := make([]*DbData, 0)
 	_ = engine.Where("file_md5 = ?", md5).Find(&data)
 	return data
