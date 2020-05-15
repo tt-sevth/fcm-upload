@@ -20,7 +20,7 @@ type Baidu struct {
 	CustomDomain    string `json:"custom_domain"`
 }
 
-func (b Baidu)upload(info *fileInfo) (link string) {
+func (b Baidu) upload(info *fileInfo) (link string) {
 	util.Log.Info("使用 Baidu SDK 上传")
 	client, err := bos.NewClient(b.AccessKeyId, b.SecretAccessKey, b.Endpoint)
 	if err != nil {
@@ -40,4 +40,19 @@ func (b Baidu)upload(info *fileInfo) (link string) {
 		return
 	}
 	return util.MakeReturnLink(b.CustomDomain, b.BucketName, b.Endpoint, info.fileKey)
+}
+
+func (b Baidu) delete(info *fileInfo) bool {
+	client, err := bos.NewClient(b.AccessKeyId, b.SecretAccessKey, b.Endpoint)
+	if err != nil {
+		util.Log.Error("Baidu SDK throw err ", err)
+		return false
+	}
+
+	err = client.DeleteObject(b.BucketName, info.fileKey)
+	if err != nil {
+		util.Log.Error("Baidu SDK throw err ", err)
+		return false
+	}
+	return true
 }

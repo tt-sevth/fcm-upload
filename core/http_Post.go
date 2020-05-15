@@ -17,26 +17,26 @@ import (
 	"os"
 )
 
-type request struct {
+type postRequest struct {
 	client *http.Client
 	req    *http.Request
 	resp   http.Response
 }
 
-type RequestInputConfig struct {
+type PostRequestInputConfig struct {
 	Url    string
 	Proxy  string
 	Client *http.Client
-	Body   *RequestBodyField
+	Body   *PostRequestBodyField
 }
-type RequestBodyField struct {
+type PostRequestBodyField struct {
 	file  map[string]string
 	field map[string]string
 }
 
-func NewPost(c *RequestInputConfig) (*request, error) {
+func NewPost(c *PostRequestInputConfig) (*postRequest, error) {
 	var err error
-	r := &request{}
+	r := &postRequest{}
 	// 检测url情况
 	if c.Url == "" {
 		return nil, errors.New("url is not set")
@@ -50,7 +50,9 @@ func NewPost(c *RequestInputConfig) (*request, error) {
 		}}
 	}
 	// 自定义client权重更高，设置了client的话，再设置proxy无效
-	r.client = &http.Client{}
+	if r.client == nil {
+		r.client = &http.Client{}
+	}
 	if c.Client != nil {
 		r.client = c.Client
 	}
@@ -90,15 +92,15 @@ func NewPost(c *RequestInputConfig) (*request, error) {
 	return r, nil
 }
 
-func (r *request) SetHeader(name, value string) {
+func (r *postRequest) SetHeader(name, value string) {
 	r.req.Header.Set(name, value)
 }
 
-func (r *request) AddHeader(name, value string) {
+func (r *postRequest) AddHeader(name, value string) {
 	r.req.Header.Add(name, value)
 }
 
-func (r *request) Send() (*http.Response, error) {
+func (r *postRequest) Send() (*http.Response, error) {
 	resp, err := r.client.Do(r.req)
 	if err != nil {
 		return nil, err

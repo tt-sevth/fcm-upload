@@ -299,18 +299,18 @@ func (u Util) SetClipboard(name, link []string) error {
 }
 
 // 获取文件MD5值
-func (u Util) GetFileMD5(FilePath string) string {
+func (u Util) GetFileMD5(FilePath string) (MD5 [16]byte) {
 	f, err := os.Open(FilePath)
 	if err != nil {
-		return ""
+		return
 	}
 	defer f.Close()
 	b, _ := ioutil.ReadAll(f)
-	return fmt.Sprintf("%x", md5.Sum(b))
+	return md5.Sum(b)
 }
 
 // 文件基础处理
-func (u Util) FileInfo(fp string) (Name, MD5, Mime, path string, Size int64) {
+func (u Util) FileInfo(fp string) (Name, MD5str, Mime, path, md5header string, Size int64) {
 	Name = u.GetFileNameWithoutExt(fp)
 
 	f, err := os.Open(fp)
@@ -325,9 +325,10 @@ func (u Util) FileInfo(fp string) (Name, MD5, Mime, path string, Size int64) {
 		Mime = "plain/text"
 	}
 
-	MD5 = u.GetFileMD5(fp)
-	//fmt.Println(buffer)
-	//MD5 = "123456"
+	MD5 := util.GetFileMD5(fp)
+	MD5str = fmt.Sprintf("%x", MD5)
+	md5header = base64.StdEncoding.EncodeToString(MD5[:])
+
 	Mime = http.DetectContentType(buffer)
 	Size = u.GetFileSize(fp)
 	path = fp

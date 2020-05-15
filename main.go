@@ -10,12 +10,10 @@ package main
 import (
 	"./core"
 	"encoding/json"
-	_ "encoding/json"
 	"fmt"
 	"github.com/atotto/clipboard"
 	"os"
 	"time"
-	_ "time"
 )
 
 var util *core.Util
@@ -78,6 +76,8 @@ func argsRoute(args []string) (fps []string, method string) {
 		goto uses
 	case "-d", "--db":
 		goto db
+	case "-del":
+		goto del
 	default:
 		goto help
 	}
@@ -89,12 +89,14 @@ help:
 			"-i --init  config all",
 			"-u --use   console system typora",
 			"-d --db  	dump query",
+			"-del       /filePath",
 		}
 		help2 := []string{
 			"to show this help info",
 			"init config file; like: -i config",
 			"How to run this program; like: -u console",
 			"dump all data from database",
+			"delete file in db and storage",
 		}
 		fmt.Printf("    %-s  <option> [args]\n\n", os.Args[0])
 		for i := 0; i < len(help1); i++ {
@@ -188,6 +190,20 @@ db:
 			goto help
 		}
 		os.Exit(1)
+	}
+del:
+	{
+		path := args[2]
+		core.LoadUtil()
+		_, _ = core.LoadConfig()
+		db := core.InitDB()
+		a, b := db.DeleteSync(path)
+		if a ==0 && b==0 {
+			fmt.Println("数据库中不存在该文件数据！")
+		} else {
+			fmt.Println("执行成功'", a, "'个，执行失败'", b, "'个。")
+		}
+		os.Exit(1)	//执行完毕，退出
 	}
 	return
 }

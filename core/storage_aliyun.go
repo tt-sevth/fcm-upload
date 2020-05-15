@@ -7,7 +7,13 @@
 
 package core
 
-import "github.com/aliyun/aliyun-oss-go-sdk/oss"
+import (
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"strings"
+)
 
 type Aliyun struct {
 	Name            string `json:"name"`
@@ -18,27 +24,78 @@ type Aliyun struct {
 	CustomDomain    string `json:"custom_domain"`
 }
 
-func (a Aliyun)upload(info *fileInfo) (link string) {
+func (a Aliyun) upload(info *fileInfo) (link string) {
 	util.Log.Info("使用 aliyun SDK 上传")
-	client, err := oss.New(a.Endpoint, a.AccessKeyId, a.AccessKeySecret)
-	if err != nil {
-		util.Log.Error("Aliyun SDK throw err ", err)
-		return
+	var err error
+	var region string
+	if a.Endpoint != "" {
+		region = strings.Split(a.Endpoint, ".")[0]
 	}
-	bucket, err := client.Bucket(a.BucketName)
-	if err != nil {
-		util.Log.Error("Aliyun SDK throw err ", err)
-		return
+
+	sess := session.Must(session.NewSession(&aws.Config{
+		Endpoint:    aws.String(a.Endpoint),
+		Region:      aws.String(region),
+		DisableSSL:  aws.Bool(false),
+		Credentials: credentials.NewStaticCredentials(a.AccessKeyId, a.AccessKeySecret, ""),
+	}))
+
+	svc := s3.New(sess)
+
+	// 普通上传
+	if info.fileSize <= maxFileSize {
+		fd, _ := util.OpenFileByReadOnly(info.filePath)
+		defer fd.Close()
+		_, err = svc.PutObject(&s3.PutObjectInput{
+			Body:       aws.ReadSeekCloser(fd),
+			Bucket:     aws.String(a.BucketName),
+			ContentMD5: aws.String(info.md5Header),
+			Key:        aws.String(info.fileKey),
+		})
+	} else {
+		// 分片上传
+		util.Log.Info("阿里云使用分片上传文件：", info.fileName)
+		//upload := NewAwsMultiPartUpload()
+		upload := &AwsMultiPartUpload{
+			Bucket:   a.BucketName,
+			FilePath: info.filePath,
+			FileSize: info.fileSize,
+			FileKey:  info.fileKey,
+			FileMime: info.fileMime,
+			PartSize: partSize,
+		}
+		err = upload.AwsMultipartUpload(svc)
 	}
-	if info.fileSize <= maxFileSize {	// 直接上传，最大5G文件
-		err = bucket.PutObjectFromFile(info.fileKey, info.filePath)
-	} else {	// 分片上传，支持断点续传
-		err = bucket.UploadFile(info.fileKey, info.filePath, partSize, oss.Routines(8), oss.Checkpoint(true, ""))
-	}
+
 	if err != nil {
-		util.Log.Error("Aliyun SDK throw err ", err)
+		util.Log.Error("a By AWS SDK throw err ", err)
 		return
 	}
 
 	return util.MakeReturnLink(a.CustomDomain, a.BucketName, a.Endpoint, info.fileKey)
+}
+
+func (a Aliyun) delete(info *fileInfo) bool {
+	var err error
+	var region string
+	if a.Endpoint != "" {
+		region = strings.Split(a.Endpoint, ".")[0]
+	}
+
+	sess := session.Must(session.NewSession(&aws.Config{
+		Endpoint:    aws.String(a.Endpoint),
+		Region:      aws.String(region),
+		DisableSSL:  aws.Bool(false),
+		Credentials: credentials.NewStaticCredentials(a.AccessKeyId, a.AccessKeySecret, ""),
+	}))
+
+	svc := s3.New(sess)
+	_, err = svc.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(a.BucketName),
+		Key:    aws.String(info.fileKey),
+	})
+	if err != nil {
+		util.Log.Error("Aliyun SDK throw err ", err)
+		return false
+	}
+	return true
 }

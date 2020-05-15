@@ -25,11 +25,11 @@ func (s Smms)upload(info *fileInfo) (link string) {
 	}
 	token := s.AccessToken
 
-	post, err := NewPost(&RequestInputConfig{
+	post, err := NewPost(&PostRequestInputConfig{
 		Url:    "https://sm.ms/api/v2/upload",
 		Proxy:  config.StorageTypes.Smms.Proxy,
 		Client: nil,
-		Body: &RequestBodyField{
+		Body: &PostRequestBodyField{
 			file:  map[string]string{"smfile": info.filePath},
 			field: map[string]string{"format": "json"},
 		},

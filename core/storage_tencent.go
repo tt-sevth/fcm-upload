@@ -8,10 +8,11 @@
 package core
 
 import (
-	"context"
-	"github.com/tencentyun/cos-go-sdk-v5"
-	"net/http"
-	"net/url"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/credentials"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"strings"
 )
 
 type Tencent struct {
@@ -25,35 +26,76 @@ type Tencent struct {
 }
 
 func (t Tencent)upload(info *fileInfo) (link string) {
+	util.Log.Info("使用 tencent By Aws SDK 上传")
+
 	var err error
-	util.Log.Info("使用 tencent SDK 上传")
-	u, _ := url.Parse("https://" + t.BucketName + "." + t.Endpoint)
-	b := &cos.BaseURL{BucketURL: u}
-
-	client := cos.NewClient(b, &http.Client{
-		Transport: &cos.AuthorizationTransport{
-			SecretID:     t.SecretID,
-			SecretKey:    t.SecretKey,
-			SessionToken: t.SessionToken,
-		},
-	})
-	if client == nil {
-		util.Log.Error("Tencent SDK throw err ", "client 创建失败")
-		return
+	var region string
+	if t.Endpoint != "" {
+		region = strings.Split(t.Endpoint, ".")[1]
 	}
 
-	if info.fileSize<= maxFileSize {
-		_, err = client.Object.PutFromFile(context.Background(), info.fileKey, info.filePath, nil)
-	} else {
-		_, _, err = client.Object.Upload(context.Background(), info.fileKey, info.filePath, &cos.MultiUploadOptions{
-			PartSize:       4,	//腾讯的SDK设置问题，这里以M为单位 所以不使用 partSize
-			ThreadPoolSize: 8,	//8个线程
+	sess := session.Must(session.NewSession(&aws.Config{
+		Endpoint:    aws.String(t.Endpoint),
+		Region:      aws.String(region),
+		DisableSSL:  aws.Bool(false),
+		Credentials: credentials.NewStaticCredentials(t.SecretID, t.SecretKey, t.SessionToken),
+	}))
+
+	svc := s3.New(sess)
+
+	// 普通上传
+	if info.fileSize <= maxFileSize {
+		fd, _ := util.OpenFileByReadOnly(info.filePath)
+		defer fd.Close()
+		_, err = svc.PutObject(&s3.PutObjectInput{
+			Body:       aws.ReadSeekCloser(fd),
+			Bucket:     aws.String(t.BucketName),
+			ContentMD5: aws.String(info.md5Header),
+			Key:        aws.String(info.fileKey),
 		})
+	} else {
+		// 分片上传
+		util.Log.Info("腾讯云使用分片上传文件：", info.fileName)
+		upload := &AwsMultiPartUpload{
+			Bucket:   t.BucketName,
+			FilePath: info.filePath,
+			FileSize: info.fileSize,
+			FileKey:  info.fileKey,
+			FileMime: info.fileMime,
+			PartSize: partSize,
+		}
+		err = upload.AwsMultipartUpload(svc)
 	}
+
 	if err != nil {
-		util.Log.Error("Tencent SDK throw err ", err)
+		util.Log.Error("腾讯云 By AWS SDK throw err ", err)
 		return
 	}
 
 	return util.MakeReturnLink(t.CustomDomain, t.BucketName, t.Endpoint, info.fileKey)
+}
+
+func (t Tencent)delete(info *fileInfo) bool {
+	var err error
+	var region string
+	if t.Endpoint != "" {
+		region = strings.Split(t.Endpoint, ".")[1]
+	}
+
+	sess := session.Must(session.NewSession(&aws.Config{
+		Endpoint:    aws.String(t.Endpoint),
+		Region:      aws.String(region),
+		DisableSSL:  aws.Bool(false),
+		Credentials: credentials.NewStaticCredentials(t.SecretID, t.SecretKey, t.SessionToken),
+	}))
+
+	svc := s3.New(sess)
+	_, err = svc.DeleteObject(&s3.DeleteObjectInput{
+		Bucket: aws.String(t.BucketName),
+		Key:    aws.String(info.fileKey),
+	})
+	if err != nil {
+		return false
+	}
+	return true
 }
