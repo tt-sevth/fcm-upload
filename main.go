@@ -10,8 +10,8 @@ package main
 import (
 	"./core"
 	"encoding/json"
+	"errors"
 	"fmt"
-	"github.com/atotto/clipboard"
 	"os"
 	"time"
 )
@@ -242,7 +242,7 @@ func makeUpload(fps []string) [][]*core.DbData {
 // 处理返回结果
 func makeResult(Data [][]*core.DbData, method string) {
 	if len(Data) == 0 {
-		_ = clipboard.WriteAll("没有上传任何文件，请查看日志！")
+		_ = util.SetClipboardError(errors.New("没有上传任何文件，请查看日志！"))
 		if util.Method == "system" {
 			_ = util.SendUploadFailedNotify()
 		}

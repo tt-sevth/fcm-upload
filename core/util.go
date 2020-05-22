@@ -379,3 +379,8 @@ func (u Util) divideCeil(a, b int64) int {
 func (u Util) Base64Content(byte []byte) string {
 	return base64.StdEncoding.EncodeToString(byte)
 }
+
+// 错误信息
+func (u Util)SetClipboardError(err error) error {
+	return clipboard.WriteAll(err.Error())
+}

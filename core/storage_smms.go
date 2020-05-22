@@ -18,7 +18,7 @@ type Smms struct {
 	Proxy       string `json:"proxy"`
 }
 
-func (s Smms)upload(info *fileInfo) (link string) {
+func (s Smms) upload(info *fileInfo) (link string) {
 	util.Log.Info("smms upload")
 	if info.fileSize > 5<<20 {
 		return
