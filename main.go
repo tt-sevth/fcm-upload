@@ -8,9 +8,9 @@
 package main
 
 import (
-	"./core"
 	"encoding/json"
 	"errors"
+	"fcm/core"
 	"fmt"
 	"os"
 	"time"
@@ -198,12 +198,12 @@ del:
 		_, _ = core.LoadConfig()
 		db := core.InitDB()
 		a, b := db.DeleteSync(path)
-		if a ==0 && b==0 {
+		if a == 0 && b == 0 {
 			fmt.Println("数据库中不存在该文件数据！")
 		} else {
 			fmt.Println("执行成功'", a, "'个，执行失败'", b, "'个。")
 		}
-		os.Exit(1)	//执行完毕，退出
+		os.Exit(1) //执行完毕，退出
 	}
 	return
 }

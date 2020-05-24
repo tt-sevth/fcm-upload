@@ -11,10 +11,10 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/base64"
+	"fcm/core/clipboard"
 	"fmt"
 	"github.com/chenhg5/collection"
 	"github.com/gen2brain/beeep"
-	"github.com/sevth-developer/clipboard"
 	"go.uber.org/zap"
 	"io/ioutil"
 	"math"
@@ -203,7 +203,7 @@ func (u Util) GetFileNameWithoutExt(FilePath string) string {
 	var name string
 	ext := u.GetFileExt(FilePath)
 	for i := len(FilePath) - 1; i >= 0; i-- {
-		if FilePath[i] == '/' || FilePath[i] == '\\' {	//在win下使用反斜杠
+		if FilePath[i] == '/' || FilePath[i] == '\\' { //在win下使用反斜杠
 			name = FilePath[i+1:]
 			break
 		}
@@ -381,6 +381,6 @@ func (u Util) Base64Content(byte []byte) string {
 }
 
 // 错误信息
-func (u Util)SetClipboardError(err error) error {
+func (u Util) SetClipboardError(err error) error {
 	return clipboard.WriteAll(err.Error())
 }
