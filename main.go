@@ -242,7 +242,7 @@ func makeUpload(fps []string) [][]*core.DbData {
 // 处理返回结果
 func makeResult(Data [][]*core.DbData, method string) {
 	if len(Data) == 0 {
-		_ = util.SetClipboardError(errors.New("没有上传任何文件，请查看日志！"))
+		util.SetClipboardError(errors.New("没有上传任何文件，请查看日志！"))
 		if util.Method == "system" {
 			_ = util.SendUploadFailedNotify()
 		}
@@ -260,12 +260,9 @@ func makeResult(Data [][]*core.DbData, method string) {
 	case "system":
 		if len(Data[0]) == 1 {
 			_ = util.SendUploadSuccessNotify(false)
-			var name, link []string
 			for _, v := range Data {
-				name = append(name, v[0].FileName)
-				link = append(link, v[0].Link)
+				fmt.Println(v[0].Link)
 			}
-			_ = util.SetClipboard(name, link)
 		} else {
 			_ = util.SendUploadSuccessNotify(true)
 			if err := util.IsPathExists(util.SavePath); err != nil {

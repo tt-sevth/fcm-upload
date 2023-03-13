@@ -11,11 +11,11 @@ import (
 	"bytes"
 	"crypto/md5"
 	"encoding/base64"
-	"fcm/core/clipboard"
 	"fmt"
 	"github.com/chenhg5/collection"
 	"github.com/gen2brain/beeep"
 	"go.uber.org/zap"
+	"golang.design/x/clipboard"
 	"io/ioutil"
 	"math"
 	"math/rand"
@@ -51,11 +51,11 @@ func LoadUtil() *Util {
 	return util
 }
 
-//InitUtil 初始化工具集
+// InitUtil 初始化工具集
 func (u *Util) initUtil() {
 	u.HomePath = getHomeDir()
 	// 设置项目根目录
-	u.WorkDir = u.HomePath + "/FCM"
+	u.WorkDir = u.HomePath + "/fcm-upload"
 	u.ConfigPath = u.WorkDir + "/config"
 	u.LogPath = u.WorkDir + "/log"
 	u.SavePath = u.WorkDir + "/save"
@@ -281,21 +281,28 @@ func (u Util) SendUploadFailedNotify() (err error) {
 }
 
 // 设置剪切板内容
-func (u Util) SetClipboard(name, link []string) error {
+func (u Util) SetClipboard(name, link []string) {
+	err := clipboard.Init()
+	if err != nil {
+		panic(err)
+	}
 	var buffer bytes.Buffer
 	var temp string
-	img := []string{
-		"jpg", "jpeg", "png", "gif", "bmp", "ico",
-	}
+	//img := []string{
+	//	"jpg", "jpeg", "png", "gif", "bmp", "ico",
+	//}
 	for i := 0; i < len(name); i++ {
-		ext := strings.ToLower(strings.TrimLeft(u.GetFileExt(link[i]), "."))
-		temp = link[i] + "\n"
-		if collection.Collect(img).Contains(ext) {
-			temp = "!" + "[" + name[i] + "](" + link[i] + ")\n"
+		//ext := strings.ToLower(strings.TrimLeft(u.GetFileExt(link[i]), "."))
+		temp = link[i]
+		if i != len(name) {
+			temp += "\n"
 		}
+		//if collection.Collect(img).Contains(ext) {
+		//	temp = "!" + "[" + name[i] + "](" + link[i] + ")\n"
+		//}
 		buffer.WriteString(temp)
 	}
-	return clipboard.WriteAll(buffer.String())
+	clipboard.Write(clipboard.FmtText, buffer.Bytes())
 }
 
 // 获取文件MD5值
@@ -381,6 +388,10 @@ func (u Util) Base64Content(byte []byte) string {
 }
 
 // 错误信息
-func (u Util) SetClipboardError(err error) error {
-	return clipboard.WriteAll(err.Error())
+func (u Util) SetClipboardError(err error) {
+	error := clipboard.Init()
+	if error != nil {
+		panic(error)
+	}
+	clipboard.Write(clipboard.FmtText, []byte(err.Error()))
 }

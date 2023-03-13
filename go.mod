@@ -14,5 +14,6 @@ require (
 	github.com/ufilesdk-dev/ufile-gosdk v0.0.0-20200508112032-84de5bc89f38
 	github.com/upyun/go-sdk v2.1.0+incompatible
 	go.uber.org/zap v1.15.0
+	golang.design/x/clipboard v0.6.0
 	xorm.io/xorm v1.0.1
 )
